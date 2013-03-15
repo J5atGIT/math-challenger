@@ -1,0 +1,19 @@
+CACHE MANIFEST
+# v21 - 2013-03-13
+CACHE:
+/math-challenger/index.html
+/math-challenger/js/core.js
+/math-challenger/js/MMChallenger.js
+/math-challenger/css/style.css
+/math-challenger/config/config.json
+/math-challenger/images/close.png
+/math-challenger/js/lib/dust-core-0.3.0.min.js
+/math-challenger/js/dust/compiled_templates.js  
+
+NETWORK:
+http://fonts.googleapis.com/css
+http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js
+http://themes.googleusercontent.com/static/fonts/fjallaone/v1/rxxXUYj4oZ6Q5oDJFtEd6r3hpw3pgy2gAi-Ip7WPMi0.woff
+
+FALLBACK:
+http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js /math-challenger/js/lib/jquery.min.js

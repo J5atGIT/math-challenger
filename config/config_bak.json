@@ -1,0 +1,144 @@
+{
+	"operations": {
+		"multiplication": {
+			"levels": {
+				"0": {
+					"text": "Answer 20 Questions in 1 minute.",
+					"time": 60,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"random": false,
+					"questions": 20,
+					"selector": {
+						"type": "select",
+						"text": "Choose your multiplication table",
+						"value": [
+							"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x9", "x10", "x11"
+						]
+					}
+				},
+				"1": {
+					"text": "Answer 50 questions in 2 1/2 minutes.",
+					"time": 150,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"questions": 50,
+					"selector": null
+				},
+				"2": {
+					"text": "Answer 100 questions in 5 minutes.",
+					"time": 300,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"random": true,
+					"questions": 100,
+					"selector": null
+				}
+			}	
+		},
+		"division": {
+			"levels": {
+				"0": {
+					"text": "Answer 20 Questions in 1 minute.",
+					"time": 60,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"random": false,
+					"questions": 20,
+					"selector": {
+						"type": "select",
+						"text": "Choose your multiplication table",
+						"value": [
+							"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x9", "x10", "x11"
+						]
+					}
+				},
+				"1": {
+					"text": "Answer 50 questions in 2 1/2 minutes.",
+					"time": 150,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"random": true,
+					"questions": 50,
+					"selector": null
+				},
+				"2": {
+					"text": "Answer 100 questions in 5 minutes.",
+					"time": 300,
+					"factor": [0,1,2,3,4,5,6,10,11],
+					"questions": 100,
+					"selector": null
+				}
+			}
+		},
+		"addition": {
+			"levels": {
+				"0": {
+					"text": "Answer 20 Questions in 1 minute.",
+					"time": 60,
+					"range": {
+						"min": 0,
+						"max": 10
+					},
+					"random": true,
+					"questions": 20,
+					"selector": null
+				},
+				"1": {
+					"text": "Answer 50 questions in 2 1/2 minutes.",
+					"time": 150,
+					"range": {
+						"min": 0,
+						"max": 20
+					},
+					"random": true,
+					"questions": 50,
+					"selector": null
+				},
+				"2": {
+					"text": "Answer 100 questions in 5 minutes.",
+					"time": 300,
+					"range": {
+						"min": 0,
+						"max": 20
+					},
+					"random": true,
+					"questions": 100,
+					"selector": null
+				}
+			}
+		},
+		"subtraction": {
+			"levels": {
+				"0": {
+					"text": "Answer 20 Questions in 1 minute.",
+					"time": 60,
+					"range": {
+						"min": 0,
+						"max": 10
+					},
+					"random": true,
+					"questions": 20,
+					"selector": null
+				},
+				"1": {
+					"text": "Answer 50 questions in 2 1/2 minutes.",
+					"time": 150,
+					"range": {
+						"min": 0,
+						"max": 20
+					},
+					"random": true,
+					"questions": 50,
+					"selector": null
+				},
+				"2": {
+					"text": "Answer 100 questions in 5 minutes.",
+					"time": 300,
+					"range": {
+						"min": 0,
+						"max": 20
+					},
+					"random": true,
+					"questions": 100,
+					"selector": null
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,199 @@
+
+		@media screen and (min-width: 390px) {
+			#content {
+				width:800px !important;
+				height:200px !important;
+			}
+			#content > span#htmlAnswerDisplayPanel {
+				width: 300px;
+				margin: 120px auto;
+				display: block;
+				text-align: center;
+			}
+
+		}
+
+		body * { margin: 0; padding: 0; font-family: helvetica, sans-serif; }
+		body {
+			font-family: 'Nosifer';
+			color: rgb(A0,A0,A0);
+			font-size: 16pt;
+		}
+		h1 { 
+			font-family: 'Fjalla One';
+			font-weight: 700;
+			font-size: 42pt; 
+			padding: 0px;
+			margin: 0px;
+		}
+		h1::first-letter {
+			font-size: 34pt;
+		}
+		p { margin: 0 0 1em; font-size: 14px; }
+		#mmLevelInfoText {
+			font-weight: bold;
+			font-size: 36px;
+			margin: 10px 10px 10px 0;
+			padding: 5px 5px 5px 0;
+			color: #000;
+		}
+		/** Form Definitions **/
+		input, textarea, select, .mmInfoPanel { 
+			border: 1px solid #555;
+   			padding: 0.5em;
+   			font-size: 15px;
+   			color: #C0C0C0;
+   			line-height: 1.8em;
+   			width: 80%;
+   			background: #fff;
+   			background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ccc));
+   			-webkit-appearance: none;
+   			-webkit-box-shadow: 1px 1px 1px #fff;
+   			-webkit-border-radius: 0.5em;
+		} 
+		form#htmlFormAnswerPanel {
+			display: inline-block;
+		}
+		span#content-area-span {
+			font-size: 42pt;
+			font-weight: bold;
+		}
+		input#answerField {
+			color: black !important;
+			font-size: 36pt;
+			height: 55px; 
+			width: 100px;
+		}
+		input#answerField:focus {
+			outline-color: rgb(255,0,0);
+		}
+		input[type=checkbox],
+ 			input[type=radio] {
+   				display: inline-block;
+   				font-size: 15px;
+   				line-height: 1em;
+   				margin: 0 0.25em 0 0;
+   				padding: 0;
+   				width: 1.25em;
+   				height: 1.25em;
+   				-webkit-border-radius: 0.25em;
+   				vertical-align: text-top;
+ 		}
+ 		input[type=radio] {
+    		-webkit-border-radius: 2em; /* Make radios round */
+  		}
+		input:focus, textarea:focus, select:focus {
+			outline-color: #c00;
+			font-weight: bold;
+			color: #000;
+		}
+		input[type=submit] {
+     		width: auto;
+     		padding: 0.25em 1em;
+     		line-height: 1.5em;
+     		background: -webkit-gradient(linear, left top, left bottom, from(#a00), to(#600));
+     		border: 2px solid #c00;
+     		text-shadow: 0 0 2px #300;
+     		font-weight: bold;
+     		-webkit-box-shadow: 1px 1px 3px #000;
+     		margin-right: 0.5em;
+     		cursor: pointer;
+  		}
+   		input[type=reset] {
+      		width: auto;
+      		padding: 0.25em 1em;
+      		line-height: 1.5em;
+      		border: 2px solid #444;
+      		text-shadow: 0 0 2px #300;
+      		font-weight: bold;
+      		color: #999;
+      		background: -webkit-gradient(linear, left top, left bottom, from(#333), to(#222));
+      		-webkit-box-shadow: 1px 1px 3px #000;
+      		cursor: pointer;
+    	}
+		select {
+			padding: 0.5em 1em 0.5em 0.75em;
+		}
+
+		/** Custom Classes **/
+		.mmInfoPanel {
+			display: none;
+			text-align: left;
+			margin-bottom: 15px;
+		}
+		.mmInstructionPanel {
+			margin-bottom:10px;
+			font-family: 'Fjalla One';
+			letter-spacing: 0.400em;
+		}
+		.mmInstructionPanel::first-letter { 
+			font-weight: 700;
+			font-size: 1.2em;
+		}
+
+  		/** Invisible Panels **/
+  		#mmLevel0Addendum {
+  			display: none;
+  		}
+  		/** / Custom classes end **/
+
+
+		/** MODAL Style Definition **/
+		#overlay {
+		    position: fixed; 
+		    top: 0;
+		    left: 0;
+		    width: 100%;
+		    height: 100%;
+		    background: #000;
+		    opacity: 0.5;
+		    filter: alpha(opacity=50);
+		}
+
+		#modal {
+		    position:absolute;
+		    background:url(tint20.png) 0 0 repeat;
+		    background:rgba(0,0,0,0.2);
+		    border-radius:14px;
+		    padding:8px;
+		}
+
+		#content {
+		    border-radius:8px;
+		    background:#fff;
+		    padding:20px;
+		    padding-bottom: 100px;
+		    width:80%;
+		    height:80%;
+		}
+
+		#close {
+		    position:absolute;
+		    background:url(images/close.png) 0 0 no-repeat;
+		    width:24px;
+		    height:27px;
+		    display:block;
+		    text-indent:-9999px;
+		    top:-7px;
+		    right:-7px;
+		}
+
+		#nkomo {
+			background:#994532;
+			width:400px;
+			height:300px;
+		}
+
+		.import-text-style { 
+			color: rgb(255,0,0);
+			font-weight: 700;
+			font-size: 18pt; 
+		}
+		#timer-display-canvas {
+			position: absolute;
+			width: 360px;
+			height: 40px;
+			bottom: 20px;
+			left: 10px;
+			background-color: red;
+		}
