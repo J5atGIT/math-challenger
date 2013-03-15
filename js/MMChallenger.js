@@ -463,7 +463,7 @@ function Timer( _length, _onEndFunc ) {
 
 	function MMChallengerController() {
 		var modalRef, 
-			configPath = 'config.json',
+			configPath = '/math-challenger/config/config.json',
 			appConfig,
 			test;
 		var userParams = {
@@ -483,7 +483,7 @@ function Timer( _length, _onEndFunc ) {
 			var oXMLHttpRequest = new XMLHttpRequest();
 			oXMLHttpRequest.open( 'GET', configPath, false ); // asynchronous = false;
 			oXMLHttpRequest.onload = function() {
-				setConfig( JSON.parse( this.responseText )); 
+				setConfig( JSON.parse( this.responseText ));
 			};
 			oXMLHttpRequest.send();
 		}
