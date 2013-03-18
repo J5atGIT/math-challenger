@@ -322,6 +322,8 @@ function ProblemSet( _size, _symbol ) {
 	this.getRandomQuestion = function() {
 		return this.aSet[ this.getRandomNumber( this.size ) ];
 	};
+
+	return this;
 }
 
 function AdditionProblemSet( _size, _symbol, _range ) {
