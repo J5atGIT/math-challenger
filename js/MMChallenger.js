@@ -298,7 +298,7 @@ function Timer( _length, _onEndFunc ) {
 	}
 }
 
-function ProblemSet(_size, _symbol) {
+function ProblemSet( _size, _symbol ) {
 	this.size = _size || 0;
 	this.symbol = _symbol || '###';
 	this.aSet = [];
@@ -336,11 +336,13 @@ function AdditionProblemSet( _size, _symbol, _range ) {
 			addend = this.getRandomNumber( range.max );
 			problem = { 'augend': augend,'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
 			this.aSet.push( problem );
-			console.log( problem );
+			console.log( 'this.populate():::' + problem );
 		}
 
 		return this.aSet;
 	};
+
+	return this;
 }
 AdditionProblemSet.inherits( ProblemSet );
 
