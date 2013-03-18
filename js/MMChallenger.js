@@ -84,7 +84,7 @@ function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
 
 		// configure timer
 		timer = new Timer(timeLimit, function() { oMM.end(); });
-		timer.start();		
+		timer.start();
 	}
 
 
@@ -229,7 +229,6 @@ function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
 
 	init();
 }
-
 Test.prototype = new EventTarget();
 Test.prototype.constructor = Test;
 
@@ -299,122 +298,115 @@ function Timer( _length, _onEndFunc ) {
 	}
 }
 
-	function ProblemSet() {
-		this.size = 0;
-		this.symbol = '###';					
-		this.aSet = [];
+function ProblemSet(_size, _symbol) {
+	this.size = _size || 0;
+	this.symbol = _symbol || '###';
+	this.aSet = [];
 
-		function render() {
-			for (var i = 0; i < _size; i++) {
+	this.getArraySet = function() {
+		return this.aSet;
+	};
 
-			}
+	this.getSymbol = function() {
+		return this.symbol;
+	};
+
+	this.setSize = function( _size ) {
+		this.size = _size;
+	};
+
+	this.getRandomNumber = function( _limit ) {
+		return Math.floor( ( Math.random() * _limit) + 1 );
+	};
+
+	this.getRandomQuestion = function() {
+		return this.aSet[ this.getRandomNumber( this.size ) ];
+	};
+}
+
+function AdditionProblemSet( _size, _symbol, _range ) {
+	ProblemSet.call( this, _size, _symbol );
+	var range = _range;
+
+	this.populate = function() {
+		var augend, addend;
+
+		for ( var i = 0; i < this.size; i++ ) {
+			augend = this.getRandomNumber( range.max );
+			addend = this.getRandomNumber( range.max );
+			problem = { 'augend': augend,'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
+			this.aSet.push( problem );
+			console.log( problem );
 		}
 
-		this.getArraySet = function() {
-			return this.aSet;
-		};
+		return this.aSet;
+	};
+}
+AdditionProblemSet.inherits( ProblemSet );
 
-		this.getSymbol = function() {
-			return this.symbol;
-		};
+function SubtractionProblemSet( _range, _size ) {
+	var range = _range;
+	this.size = _size;
+	this.aSet = [];
+	this.symbol = '-';
 
-		this.setSize = function( _size ) {
-			this.size = _size; 
-		};
+	this.populate = function() {
+		var minuend, subtrahend;
+		for ( var i = 0; i < this.size; i++ ) {
+			minuend = this.getRandomNumber( range.max );
+			subtrahend = this.getRandomNumber( minuend );
+			problem = { 'minuend': minuend,'subtrahend': subtrahend, 'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
+			this.aSet.push( problem );
+		}
 
-		this.getRandomNumber = function( _limit ) {
-			return Math.floor( ( Math.random() * _limit) + 1 );
-		};
+		return this.aSet;
+	};
+}
+SubtractionProblemSet.inherits( ProblemSet );
 
-		this.getRandomQuestion = function() {
-			return this.aSet[ this.getRandomNumber( this.size ) ];
-		};
-	}
+function DivisionProblemSet( _divisor, _range, _size ) {
+	var divisor = _divisor;
+	var range = _range;
+	this.size = _size;
+	this.symbol = '/';
+	this.aSet = [];
 
-	function AdditionProblemSet( _range, _size ) {
-		var range = _range;
-		this.size = _size;
-		this.symbol = '+';
-		this.aSet = [];
+	this.populate = function() {
+		var dividend;
+		
+		for ( var i = 0; i < this.size; i++ ) {
+			dividend = this.getRandomNumber( range.max );
+			problem = {'type': 'division', 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
+			this.aSet.push( problem );
+			console.log( 'aSet Length: ' + JSON.stringify( this.aSet[i] ) );
+		}
 
-		this.populate = function() {
-			var augend, addend;
-			for ( var i = 0; i < this.size; i++ ) {
-				augend = this.getRandomNumber( range.max );
-				addend = this.getRandomNumber( range.max );
-				problem = { 'augend': augend,'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
-				this.aSet.push( problem );
-				console.log( problem );
-			}
+		return this.aSet;
+	};
+}
+DivisionProblemSet.inherits( ProblemSet );
 
-			return this.aSet;
-		};
-	}
-	AdditionProblemSet.inherits( ProblemSet );
+function MultiplicationProblemSet( _multiplicator, _range, _size ) {
+	var multiplicator = _multiplicator
+	var range = _range;
+	this.size = _size;
+	this.symbol = 'x';
+	this.aSet = [];
 
-	function SubtractionProblemSet( _range, _size ) {
-		var range = _range;
-		this.size = _size;
-		this.aSet = [];
-		this.symbol = '-';
+	this.populate = function() {
+		var multiplicand;
+		
+		for ( var i = 0; i < this.size; i++ ) {
+			multiplicand = this.getRandomNumber( range.max );
+			problem = { 'type': 'multiplication', 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
+			this.aSet.push( problem );
+			console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
+		}
 
-		this.populate = function() {
-			var minuend, subtrahend;
-			for ( var i = 0; i < this.size; i++ ) {
-				minuend = this.getRandomNumber( range.max );
-				subtrahend = this.getRandomNumber( minuend );
-				problem = { 'minuend': minuend,'subtrahend': subtrahend, 'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
-				this.aSet.push( problem );
-			}
-
-			return this.aSet;
-		};
-	}
-	SubtractionProblemSet.inherits( ProblemSet );
-
-	function DivisionProblemSet( _divisor, _range, _size ) {
-		var divisor = _divisor;
-		var range = _range;
-		this.size = _size;
-		this.symbol = '/';
-		this.aSet = [];
-
-		this.populate = function() {
-			var dividend;
-			
-			for ( var i = 0; i < this.size; i++ ) {
-				dividend = this.getRandomNumber( range.max );
-				problem = {'type': 'division', 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
-				this.aSet.push( problem );
-				console.log( 'aSet Length: ' + JSON.stringify( this.aSet[i] ) );
-			}
-
-			return this.aSet;
-		};
-	}
-	DivisionProblemSet.inherits( ProblemSet );
-
-	function MultiplicationProblemSet( _multiplicator, _range, _size ) {
-		var multiplicator = _multiplicator
-		var range = _range;
-		this.size = _size;
-		this.symbol = 'x';
-		this.aSet = [];
-
-		this.populate = function() {
-			var multiplicand;
-			
-			for ( var i = 0; i < this.size; i++ ) {
-				multiplicand = this.getRandomNumber( range.max );
-				problem = { 'type': 'multiplication', 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
-				this.aSet.push( problem );
-				console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
-			}
-
-			return this.aSet;
-		};
-	}
-	MultiplicationProblemSet.inherits( ProblemSet );
+		return this.aSet;
+	};
+}
+MultiplicationProblemSet.inherits( ProblemSet );
 
 	function TimesTable(_multiplicator, _size, _startIndex) {
 		var multiplicator = _multiplicator;
