@@ -57,25 +57,20 @@ function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
 
 		// Multiplication Test:
 		if ( type == 'multiplication' ) {
-			// problemSet = new TimesTable(multiplicator, numberOfQuestions, 0);
-			problemSet = new MultiplicationProblemSet( multiplicator, range, numberOfQuestions );
+			problemSet = new MultiplicationProblemSet( numberOfQuestions, range, multiplicator );
 			questions = problemSet.populate();
-			console.log( 'problemset symbol: ' + problemSet.getSymbol() );
 		}
 		else if ( type == 'division' ) {
-			problemSet = new DivisionProblemSet( multiplicator, range, numberOfQuestions );
+			problemSet = new DivisionProblemSet( numberOfQuestions, range, multiplicator );
 			questions = problemSet.populate();
-			console.log( 'problemset symbol: ' + problemSet.getSymbol() );
 		}
 		else if ( type == 'subtraction' ) {
-			problemSet = new SubtractionProblemSet( range, numberOfQuestions );
+			problemSet = new SubtractionProblemSet( numberOfQuestions, range );
 			questions = problemSet.populate();
-			console.log( 'problemset symbol: ' + problemSet.getSymbol() );
 		}
 		else if ( type == 'addition' ) {
-			problemSet = new AdditionProblemSet( range, numberOfQuestions );
+			problemSet = new AdditionProblemSet( numberOfQuestions, range );
 			questions = problemSet.populate();
-			console.log( 'problemset symbol: ' + problemSet.getSymbol() );
 		}
 		else {
 			console.log( 'exiting b/c type is not supported: ' + type );
@@ -326,8 +321,8 @@ function ProblemSet( _size, _symbol ) {
 	return this;
 }
 
-function AdditionProblemSet( _size, _symbol, _range ) {
-	ProblemSet.call( this, _size, _symbol );
+function AdditionProblemSet( _size, _range ) {
+	ProblemSet.call( this, _size, '+' );
 	var range = _range;
 
 	this.populate = function() {
@@ -348,11 +343,9 @@ function AdditionProblemSet( _size, _symbol, _range ) {
 }
 AdditionProblemSet.inherits( ProblemSet );
 
-function SubtractionProblemSet( _range, _size ) {
+function SubtractionProblemSet( _size, _range ) {
+	ProblemSet.call( this, _size, '-' );
 	var range = _range;
-	this.size = _size;
-	this.aSet = [];
-	this.symbol = '-';
 
 	this.populate = function() {
 		var minuend, subtrahend;
@@ -365,19 +358,19 @@ function SubtractionProblemSet( _range, _size ) {
 
 		return this.aSet;
 	};
+
+	return this;
 }
 SubtractionProblemSet.inherits( ProblemSet );
 
-function DivisionProblemSet( _divisor, _range, _size ) {
+function DivisionProblemSet( _size, _range, _divisor ) {
+	ProblemSet.call( this, _size, '/' );
 	var divisor = _divisor;
 	var range = _range;
-	this.size = _size;
-	this.symbol = '/';
-	this.aSet = [];
 
 	this.populate = function() {
 		var dividend;
-		
+
 		for ( var i = 0; i < this.size; i++ ) {
 			dividend = this.getRandomNumber( range.max );
 			problem = {'type': 'division', 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
@@ -387,19 +380,19 @@ function DivisionProblemSet( _divisor, _range, _size ) {
 
 		return this.aSet;
 	};
+
+	return this;
 }
 DivisionProblemSet.inherits( ProblemSet );
 
-function MultiplicationProblemSet( _multiplicator, _range, _size ) {
-	var multiplicator = _multiplicator
+function MultiplicationProblemSet( _size, _range, _multiplicator ) {
+	ProblemSet.call( this, _size, 'x' );
+	var multiplicator = _multiplicator;
 	var range = _range;
-	this.size = _size;
-	this.symbol = 'x';
-	this.aSet = [];
 
 	this.populate = function() {
 		var multiplicand;
-		
+
 		for ( var i = 0; i < this.size; i++ ) {
 			multiplicand = this.getRandomNumber( range.max );
 			problem = { 'type': 'multiplication', 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
@@ -412,53 +405,8 @@ function MultiplicationProblemSet( _multiplicator, _range, _size ) {
 }
 MultiplicationProblemSet.inherits( ProblemSet );
 
-	function TimesTable(_multiplicator, _size, _startIndex) {
-		var multiplicator = _multiplicator;
-		var size = _size;
-		var startIndex = _startIndex || 0;
-		var timesTableAsJSON = renderTableAsJSON();
-		console.log(timesTableAsJSON);
-
-		function multiply(_number) {
-			return multiplicator * _number;
-		}
-
-		function renderTableAsJSON() {
-			var jsonTable = [];
-			for (var i = startIndex; i <= size; i++) {
-				jsonTable.push({'multiplicator':multiplicator, 'index':i, 'answer':multiply(i)});
-			}
-
-			return jsonTable;
-		}
-
-		this.getMultiplicator = function() {
-			return multiplicator;
-		};
-
-		this.renderTable = function() {
-			var fullTableAsText = '';
-
-			for (var i = startIndex; i <= size; i++) {
-				fullTableAsText += multiplicator + " x " + i + " = " + multiply(i) + "\n";
-			}
-		};
-
-		this.getRandomQuestion = function() {
-			return timesTableAsJSON[Math.floor(Math.random()*size)]
-		};
-	}
-
-	function OMChallengerController() {
-		var multiplicator = 5;
-		var displayId;
-		var aTimesTable = [];
-		var oTimer;
-		var aAnswers
-	}
-
 	function MMChallengerController() {
-		var modalRef, 
+		var modalRef,
 			configPath = '/math-challenger/config/config.json',
 			appConfig,
 			test;
@@ -489,7 +437,7 @@ MultiplicationProblemSet.inherits( ProblemSet );
 		}
 
 		function setEnvironment() {
-			if ( userParams.operation == null || userParams.level == -1 ) {
+			if ( userParams.operation === null || userParams.level === -1 ) {
 				console.log( "returning... Select and operation and a level" );
 				return;
 			}
@@ -503,7 +451,7 @@ MultiplicationProblemSet.inherits( ProblemSet );
 					break;
 				}
 			}
-			if ( appConfigOperationsRef == null ) {
+			if ( appConfigOperationsRef === null ) {
 				console.log ( "returning... Operation not found in appConfig." );
 				return;
 			}
