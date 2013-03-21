@@ -192,6 +192,14 @@
 			}
 		}
 
+		this.getType = function() {
+			return type;
+		};
+
+		this.getQuestions = function() {
+			return questions;
+		};
+
 		this.close = function() {};
 
 		this.grade = function( _close ) {
@@ -222,10 +230,10 @@
 			};
 		};
 
-		this.start = function() {
+		this.start = function( _qIdx ) {
 			status = Test.START;
 			this.fire( Test.START );
-			return this.next();
+			return this.next( _qIdx );
 		};
 
 		this.answer = function( _answer, _qIdx ) {
@@ -234,9 +242,9 @@
 			questions[qIdx].userAnswer = _answer;
 		};
 
-		this.next = function() {
+		this.next = function( _qIdx ) {
 			if ( status == Test.COMPLETE ) { return null; }
-			if ( ++currentQuestion >= numberOfQuestions ) {
+			if ( _qIdx >= numberOfQuestions ) {
 				this.complete();
 				return null;
 			}
@@ -244,31 +252,31 @@
 			var oQModel = {}, factor1, factor2;
 			switch ( type ) {
 				case 'multiplication':
-					factor1 = questions[currentQuestion].multiplicator;
-					factor2 = questions[currentQuestion].multiplicand;
+					factor1 = questions[_qIdx].multiplicator;
+					factor2 = questions[_qIdx].multiplicand;
 					break;
 				case 'division':
-					factor1 = questions[currentQuestion].dividend;
-					factor2 = questions[currentQuestion].divisor;
+					factor1 = questions[_qIdx].dividend;
+					factor2 = questions[_qIdx].divisor;
 					break;
 				case 'addition':
-					factor1 = questions[currentQuestion].augend;
-					factor2 = questions[currentQuestion].addend;
+					factor1 = questions[_qIdx].augend;
+					factor2 = questions[_qIdx].addend;
 					break;
 				case 'subtraction':
-					factor1 = questions[currentQuestion].minuend;
-					factor2 = questions[currentQuestion].subtrahend;
+					factor1 = questions[_qIdx].minuend;
+					factor2 = questions[_qIdx].subtrahend;
 					break;
 				default:
 					break;
 			}
 
 			return {
-				'readableQuestionIdx': currentQuestion + 1,
-				'questionIdx': currentQuestion,
+				'readableQuestionIdx': _qIdx + 1,
+				'questionIdx': _qIdx,
 				'factor1': factor1,
 				'factor2': factor2,
-				'operator': questions[currentQuestion].operator
+				'operator': questions[_qIdx].operator
 			};
 		};
 
@@ -288,21 +296,21 @@
 	}
 	Test.prototype = new EventTarget();
 	Test.prototype.constructor = Test;
-	Object.defineProperty (  Test, 'COMPLETE', {
+	Object.defineProperty( Test, 'COMPLETE', {
 			get: function() { return 'complete'; },
 			writeable: false,
 			enumerable: false,
 			configurable: false
 		}
 	);
-	Object.defineProperty (  Test, 'INITIALIZED', {
+	Object.defineProperty( Test, 'INITIALIZED', {
 			get: function() { return 'iniitialized'; },
 			writeable: false,
 			enumerable: false,
 			configurable: false
 		}
 	);
-	Object.defineProperty (  Test, 'START', {
+	Object.defineProperty( Test, 'START', {
 			get: function() { return 'start'; },
 			writeable: false,
 			enumerable: false,
@@ -441,24 +449,115 @@
 		};
 	}
 
+	function User( _id ) {
+		var id = new Date().getTime(),
+			name,
+			oExam,
+			__Answers = [],
+			currentQuestionIdx = -1,
+			oTimer;
+
+		this.parameters = {
+			level: -1,
+			operation: null,
+			addendum: null,
+			testConfig: null
+		};
+
+		this.start = function() {
+			// Configure User Param
+			if ( this.parameters.addendum == -1 ) {
+				console.log( "Set a value for the addendum" );
+				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
+			}
+			// Start Create Test Object and start.
+			oExam = new Test(
+							this.parameters.operation,
+							this.parameters.addendum,
+							this.parameters.testConfig.questions,
+							this.parameters.testConfig.time,
+							this.parameters.testConfig.range
+						);
+			oExam.addListener( 'start', function() { console.log( 'Test Started!!!' ); } );
+			oExam.addListener( 'complete', this.callController.bind( this ) );
+			// configure timer
+			oTimer = new Timer( 10, this.end.bind( this ) );
+			// Start Timer
+			oTimer.start();
+			// Start Test
+			return oExam.start( ++currentQuestionIdx );
+		};
+
+		this.callController = function() {
+			oMM.handleTestCompletedFromUser( this );
+		};
+
+		this.setName = function( _name ) {
+			name = _name;
+		};
+
+		this.answer = function( _answer ) {
+			__Answers[currentQuestionIdx] = _answer;
+		};
+
+		this.next = function() {
+			return oExam.next( ++currentQuestionIdx );
+		};
+
+		this.end = function() {
+			oExam.complete();
+		};
+
+		this.reset = function() {
+			oTimer.kill();
+			oExam.complete();
+		};
+
+		this.grade = function() {
+			var oModel_,
+				numberOfQuestionsCorrect = 0,
+				questionsAnswered = 0,
+				__ExamQuestionsRef = oExam.getQuestions();
+
+			// Tally User Score
+			for ( var i = 0, numberOfQuestions = __ExamQuestionsRef.length; i < numberOfQuestions; i++ ) {
+				if ( __ExamQuestionsRef[i].answer == __Answers[i] ) { ++numberOfQuestionsCorrect; }
+				if ( __Answers[i] ) { ++questionsAnswered; }
+			}
+
+			var type = oExam.getType();
+			return {
+				'name': name,
+				'type': oExam.getType(),
+				'operation': function(chunk, context, bodies) {
+					if ( type === 'multiplication' || type === 'division' ) {
+						chunk.render( bodies.block, context );
+					}
+				},
+				'multiplicator': this.parameters.addendum,
+				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
+				'questionsAnswered': questionsAnswered,
+				'questionsCorrect': numberOfQuestionsCorrect,
+				'timeSpent': 0 //oTimer.getElapsedTime()
+			};
+		};
+	}
+
 	function MMChallengerController() {
 		var modalRef,
 			configPath = '/math-challenger/config/config.json',
 			appConfig,
 			oMMTest,
 			oTimer,
+			__Users = [],
+			currentUserIdx,
 			oDashboardView = new MMCDashboardView(),
 			oMMCQuestionView = new MMCQuestionView(),
 			oMMCResultView = new MMCResultView();
 
-		var userParams = {
-				level: -1,
-				operation: null,
-				addendum: null,
-				testConfig: null
-			};
-
 		function init() {
+			__Users.push( new User() );
+			currentUserIdx = __Users.length - 1;
 			fetchAppConfig();
 		}
 
@@ -476,7 +575,7 @@
 		}
 
 		function setEnvironment() {
-			if ( userParams.operation === null || userParams.level === -1 ) {
+			if ( __Users[currentUserIdx].parameters.operation === null || __Users[currentUserIdx].parameters.level === -1 ) {
 				console.log( "returning... Select and operation and a level" );
 				return;
 			}
@@ -485,7 +584,7 @@
 			var appConfigOperationsRef, appConfigLevelRef;
 			// Get Operations Handle
 			for ( var key in appConfig.operations ) {
-				if ( key == userParams.operation ) {
+				if ( key == __Users[currentUserIdx].parameters.operation ) {
 					appConfigOperationsRef = appConfig.operations[key];
 					break;
 				}
@@ -496,43 +595,25 @@
 			}
 			// Get Level Handle
 			for ( var key2 in appConfigOperationsRef.levels ) {
-				if ( key2 === userParams.level ) {
+				if ( key2 === __Users[currentUserIdx].parameters.level ) {
 					appConfigLevelRef = appConfigOperationsRef.levels[key2];
-					userParams.testConfig = appConfigLevelRef;
+					__Users[currentUserIdx].parameters.testConfig = appConfigLevelRef;
 					break;
 				}
 			}
 			// Render Components
 			// Show Instructions
-			oDashboardView.render( appConfigLevelRef, userParams );
+			oDashboardView.render( appConfigLevelRef, __Users[currentUserIdx].parameters );
 		}
 
 		this.start = function( _oForm ) {
 			var oModel;
 			var playerName = ( _oForm.mmPlayerHandle.value == 'Enter Nick Name' )? 'DefaultUser' : _oForm.mmPlayerHandle.value;
-			// Configure User Param
-			if ( userParams.addendum == -1 ) {
-				console.log( "Set a value for the addendum" );
-				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
-			}
-			// Start Create Test Object and start.
-			oMMTest = new Test( userParams.operation,
-							userParams.addendum,
-							userParams.testConfig.questions,
-							userParams.testConfig.time,
-							userParams.testConfig.range
-						);
-			oMMTest.addListener( 'start', function() { console.log( 'Test Started!!!' ); } );
-			oMMTest.addListener( 'complete', this.grade.bind( this ) );
-			// configure timer
-			oTimer = new Timer( userParams.testConfig.time, this.end.bind( this ) );
-			// Start Test
-			oModel = oMMTest.start();
+			__Users[currentUserIdx].setName( playerName );
+			oModel = __Users[currentUserIdx].start();
 			if ( oModel  !== null ) {
 				// Show Question
 				oMMCQuestionView.render( oModel );
-				// Start Timer
-				oTimer.start();
 			}
 		};
 
@@ -540,11 +621,11 @@
 			var oModel;
 			if ( !_formRef || ( _formRef.answerField.value === null || _formRef.answerField.value === '' ) ) {
 				return false;
-				// throw new Error(3, 'No form input received.  Enter an answer.' );
 			}
 			// Evaluate the answer. Expect the oMMTest to know the currentQuestion.
-			oMMTest.answer( _formRef.answerField.value );
-			oModel = oMMTest.next();
+			__Users[currentUserIdx].answer( _formRef.answerField.value );
+			// Show next question
+			oModel = __Users[currentUserIdx].next();
 			if ( oModel !== null ) {
 				// Show next Question;
 				oMMCQuestionView.render( oModel );
@@ -552,11 +633,12 @@
 		};
 
 		this.end = function() {
-			oMMTest.complete();
+			__Users[currentUserIdx].end();
 		};
 
 		this.grade = function() {
-			oModel = oMMTest.grade();
+			console.log('MMChallengerController.grade()')
+			oModel = __Users[currentUserIdx].grade();
 			if ( oModel  !== null ) {
 				// Show Result Screen
 				oMMCResultView.render( oModel );
@@ -564,8 +646,7 @@
 		};
 
 		this.reset = function() {
-			oTimer.kill();
-			oMMTest.complete();
+			__Users[currentUserIdx].reset();
 		};
 
 		this.handleLevelSelect = function( _oFormSelect ) {
@@ -573,8 +654,8 @@
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
-			userParams.level = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : -1;
-			if (userParams.operation !== null) {
+			__Users[currentUserIdx].parameters.level = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : -1;
+			if (__Users[currentUserIdx].parameters.operation !== null) {
 				setEnvironment();
 			}
 		};
@@ -584,8 +665,8 @@
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
-			userParams.operation = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : null;
-			if ( userParams.level != -1 ) {
+			__Users[currentUserIdx].parameters.operation = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : null;
+			if ( __Users[currentUserIdx].parameters.level != -1 ) {
 				setEnvironment();
 			}
 		};
@@ -595,8 +676,16 @@
 				console.log( "Error: no handle to the Select List Form passed in");
 				return;
 			} //
-			userParams.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
-			console.log( userParams.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
+			__Users[currentUserIdx].parameters.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
+			console.log( __Users[currentUserIdx].parameters.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
+		};
+
+		this.handleTestCompletedFromUser = function( _user ) {
+			var oResultsModel = _user.grade();
+			if ( oResultsModel !== null ) {
+				// Show Result Screen
+				oMMCResultView.render( oResultsModel );
+			}
 		};
 
 		init();
