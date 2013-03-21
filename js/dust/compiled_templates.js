@@ -2,7 +2,7 @@
   dust.register("QuestionView", body_0);
 
   function body_0(chk, ctx) {
-    return chk.write("<span id=\"content-area-span\">").reference(ctx.get("questionIdx"), ctx, "h").write(": ").reference(ctx.get("factor1"), ctx, "h").write(" ").reference(ctx.get("operator"), ctx, "h").write(" ").reference(ctx.get("factor2"), ctx, "h").write(" = </span><form id=\"htmlFormAnswerPanel\" onsubmit=\"oMM.next( this ); return false;\"><input type=\"number\" id=\"answerField\" name=\"answerField\" autocomplete=\"off\" title=\"Enter a NUMERIC answer only (Characters of 0 - 9 only)\" pattern=\"[0-9]{1,3}\"></form>");
+    return chk.write("<span id=\"content-area-span\">").reference(ctx.get("readableQuestionIdx"), ctx, "h").write(": ").reference(ctx.get("factor1"), ctx, "h").write(" ").reference(ctx.get("operator"), ctx, "h").write(" ").reference(ctx.get("factor2"), ctx, "h").write(" = </span><form id=\"htmlFormAnswerPanel\" onsubmit=\"oMM.next( this ); return false;\"><input type=\"number\" id=\"answerField\" name=\"answerField\" autocomplete=\"off\" title=\"Enter a NUMERIC answer only (Characters of 0 - 9 only)\" pattern=\"[0-9]{1,3}\"></form>");
   }
   return body_0;
 })();

@@ -449,13 +449,14 @@
 		};
 	}
 
-	function User( _id ) {
+	function User( _id, _oControllerRef ) {
 		var id = new Date().getTime(),
 			name,
 			oExam,
 			__Answers = [],
 			currentQuestionIdx = -1,
-			oTimer;
+			oTimer,
+			oControllerRef = _oControllerRef;
 
 		this.parameters = {
 			level: -1,
@@ -468,28 +469,28 @@
 			// Configure User Param
 			if ( this.parameters.addendum == -1 ) {
 				console.log( "Set a value for the addendum" );
-				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
+				return;
+				//throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
 			}
-			// Start Create Test Object and start.
-			oExam = new Test(
-							this.parameters.operation,
-							this.parameters.addendum,
-							this.parameters.testConfig.questions,
-							this.parameters.testConfig.time,
-							this.parameters.testConfig.range
-						);
-			oExam.addListener( 'start', function() { console.log( 'Test Started!!!' ); } );
-			oExam.addListener( 'complete', this.callController.bind( this ) );
+			// Reset Answer Array. Would be better to add the 'userAnswer' to the 'Test' object just reseting it when 'new Test()' is called.
+			__Answers = [];
 			// configure timer
 			oTimer = new Timer( 10, this.end.bind( this ) );
-			// Start Timer
-			oTimer.start();
+			// Start Create Test Object and start.
+			oExam = new Test( this.parameters.operation, this.parameters.addendum, this.parameters.testConfig.questions,
+							this.parameters.testConfig.time, this.parameters.testConfig.range );
+			oExam.addListener( 'start', function() {
+					// Start Timer
+					oTimer.start();
+					console.log( 'Test Started!!!' );
+				} );
+			oExam.addListener( 'complete', this.callController.bind( this ) );
 			// Start Test
 			return oExam.start( ++currentQuestionIdx );
 		};
 
 		this.callController = function() {
-			oMM.handleTestCompletedFromUser( this );
+			oControllerRef.callback( 'TEST_COMPLETE', this );
 		};
 
 		this.setName = function( _name ) {
@@ -511,6 +512,7 @@
 		this.reset = function() {
 			oTimer.kill();
 			oExam.complete();
+			currentQuestionIdx = -1;
 		};
 
 		this.grade = function() {
@@ -538,7 +540,7 @@
 				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
 				'questionsAnswered': questionsAnswered,
 				'questionsCorrect': numberOfQuestionsCorrect,
-				'timeSpent': 0 //oTimer.getElapsedTime()
+				'timeSpent': Math.floor( oTimer.getElapsedTime() )
 			};
 		};
 	}
@@ -551,12 +553,13 @@
 			oTimer,
 			__Users = [],
 			currentUserIdx,
+			that = this,
 			oDashboardView = new MMCDashboardView(),
 			oMMCQuestionView = new MMCQuestionView(),
 			oMMCResultView = new MMCResultView();
 
 		function init() {
-			__Users.push( new User() );
+			__Users.push( new User( new Date().getTime(), that ) );
 			currentUserIdx = __Users.length - 1;
 			fetchAppConfig();
 		}
@@ -606,6 +609,12 @@
 			oDashboardView.render( appConfigLevelRef, __Users[currentUserIdx].parameters );
 		}
 
+		this.callback = function( _action, _object ) {
+			if ( _object instanceof User ) {
+				this.handleTestCompletedFromUser( _object );
+			}
+		};
+
 		this.start = function( _oForm ) {
 			var oModel;
 			var playerName = ( _oForm.mmPlayerHandle.value == 'Enter Nick Name' )? 'DefaultUser' : _oForm.mmPlayerHandle.value;
@@ -637,7 +646,6 @@
 		};
 
 		this.grade = function() {
-			console.log('MMChallengerController.grade()')
 			oModel = __Users[currentUserIdx].grade();
 			if ( oModel  !== null ) {
 				// Show Result Screen
