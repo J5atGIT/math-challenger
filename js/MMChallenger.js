@@ -1,423 +1,462 @@
 (function() {
-	function Question( _id, _text, _answer ) {
-	var id = _id;
-	var text = _text;
-	var answer = _answer || -1;
+	function ProblemSet( _size, _symbol ) {
+		this.size = _size || 0;
+		this.symbol = _symbol || '###';
+		this.aSet = [];
 
-	this.getAnswer = function() {
-		return answer;
-	};
-
-	this.getText = function() {
-		return text;
-	};
-
-	this.getId = function() {
-		return id;
-	};
-}
-
-function TestQuestion( _id, _text, _answer, _userAnswer ) { // extends Question.
-	var id = _id;
-	this.text = _text;
-	this.answer = _answer;
-
-	var userAnswer = _userAnswer || -1;
-
-	this.getUserAnswer = function() {
-		return userAnswer;
-	};
-	this.setUserAnswer = function(_answer) {
-		userAnswer = _answer;
-		return this;
-	};
-}
-TestQuestion.inherits(Question);
-
-function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
-	var type = _type || 'unknown';
-	var numberOfQuestions = _numberOfQuestions;
-	var questions = [];
-	var multiplicator = _multiplicator || 1;
-	var timeLimit = _timeLimit || 10; // in seconds
-	var range = _range;
-	var timer;
-	var currentQuestion = 0;
-	var ui;
-	var completed = false;
-
-	EventTarget.call( this );
-
-	function init() {
-		build();
-	}
-
-	function build() {
-		var problemSet;
-
-		// Multiplication Test:
-		if ( type == 'multiplication' ) {
-			problemSet = new MultiplicationProblemSet( numberOfQuestions, range, multiplicator );
-			questions = problemSet.populate();
-		}
-		else if ( type == 'division' ) {
-			problemSet = new DivisionProblemSet( numberOfQuestions, range, multiplicator );
-			questions = problemSet.populate();
-		}
-		else if ( type == 'subtraction' ) {
-			problemSet = new SubtractionProblemSet( numberOfQuestions, range );
-			questions = problemSet.populate();
-		}
-		else if ( type == 'addition' ) {
-			problemSet = new AdditionProblemSet( numberOfQuestions, range );
-			questions = problemSet.populate();
-		}
-		else {
-			console.log( 'exiting b/c type is not supported: ' + type );
-			return;
-		}
-
-		// configure timer
-		timer = new Timer(timeLimit, function() { oMM.end(); });
-		timer.start();
-	}
-
-
-
-	this.close = function() {
-		timer.kill();
-		setComplete( true );
-	};
-
-	this.grade = function( _close ) {
-		if ( isComplete() === true ) { return; }
-
-		var numberOfQuestionsCorrect = 0,
-			questionsAnswered = 0;
-		
-		for ( var i = 0; i < questions.length; i++ ) {
-			console.log( 'true answer: ' + questions[i].answer + ':userAnswer: ' + questions[i].userAnswer );
-			if ( questions[i].answer == questions[i].userAnswer ) {
-				++numberOfQuestionsCorrect;
-			}
-			if ( questions[i].userAnswer ) {
-				++questionsAnswered;
-			}
-		}
-
-		setComplete(true);
-		timer.kill();
-		
-		var answerContainerElement = document.createElement("span");
-		answerContainerElement.setAttribute( 'id', 'htmlAnswerDisplayPanel' );
-		var answerTextNode = document.createTextNode( "Your score is " + Math.floor(numberOfQuestionsCorrect/numberOfQuestions * 100) + '%.');
-		var brNode = document.createElement( 'br' );
-		answerContainerElement.appendChild( answerTextNode );
-		answerContainerElement.appendChild( brNode );
-		answerContainerElement.appendChild( document.createTextNode(  'You got ' + numberOfQuestionsCorrect + ' correct.' ) );
-
-		var testResults = {
-			name: name,
-			type: type,
-			operation: function(chunk, context, bodies) {
-				if (type === 'multiplication' || type === 'division') {
-					chunk.render( bodies.block, context );
-				}
-			},
-			multiplicator: multiplicator,
-			questionsPercent: Math.floor(numberOfQuestionsCorrect/numberOfQuestions * 100) + '%',
-			questionsAnswered: questionsAnswered,
-			questionsCorrect: numberOfQuestionsCorrect,
-			timeSpent: timer.getElapsedTime()
+		this.getArraySet = function() {
+			return this.aSet;
 		};
-		
-		dust.render( 'demo2', testResults, function( err, out ) {
-				modal.open( { content: out } );
-			}
-		);
-	};
 
+		this.getSymbol = function() {
+			return this.symbol;
+		};
 
-	this.start = function() {
-		this.next();
-		this.fire( 'start' );
+		this.setSize = function( _size ) {
+			this.size = _size;
+		};
+
+		this.getRandomNumber = function( _limit ) {
+			return Math.floor( ( Math.random() * _limit) + 1 );
+		};
+
+		this.getRandomQuestion = function() {
+			return this.aSet[ this.getRandomNumber( this.size ) ];
+		};
+
+		return this;
 	}
 
-	this.next = function( _form ) {
+	function AdditionProblemSet( _size, _range ) {
+		ProblemSet.call( this, _size, '+' );
+		var range = _range;
 
-		if ( _form && ( _form.answerField.value === null || _form.answerField.value === '' ) ) {
-			return false;
+		this.populate = function() {
+			var augend, addend;
+
+			for ( var i = 0; i < this.size; i++ ) {
+				augend = this.getRandomNumber( range.max );
+				addend = this.getRandomNumber( range.max );
+				problem = { 'type': 'additon', 'operator': this.symbol, 'augend': augend, 'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
+				this.aSet.push( problem );
+			}
+			return this.aSet;
+		};
+
+		return this;
+	}
+	AdditionProblemSet.inherits( ProblemSet );
+
+	function SubtractionProblemSet( _size, _range ) {
+		ProblemSet.call( this, _size, '-' );
+		var range = _range;
+
+		this.populate = function() {
+			var minuend, subtrahend;
+			for ( var i = 0; i < this.size; i++ ) {
+				minuend = this.getRandomNumber( range.max );
+				subtrahend = this.getRandomNumber( minuend );
+				problem = { 'type': 'subtraction', 'operator': this.symbol, 'minuend': minuend, 'subtrahend': subtrahend, 'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
+				this.aSet.push( problem );
+			}
+
+			return this.aSet;
+		};
+
+		return this;
+	}
+	SubtractionProblemSet.inherits( ProblemSet );
+
+	function DivisionProblemSet( _size, _range, _divisor ) {
+		ProblemSet.call( this, _size, '/' );
+		var divisor = _divisor;
+		var range = _range;
+
+		this.populate = function() {
+			var dividend;
+
+			for ( var i = 0; i < this.size; i++ ) {
+				dividend = this.getRandomNumber( range.max );
+				problem = {'type': 'division', 'operator': this.symbol, 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
+				this.aSet.push( problem );
+				console.log( 'aSet Length: ' + JSON.stringify( this.aSet[i] ) );
+			}
+
+			return this.aSet;
+		};
+
+		return this;
+	}
+	DivisionProblemSet.inherits( ProblemSet );
+
+	function MultiplicationProblemSet( _size, _range, _multiplicator ) {
+		ProblemSet.call( this, _size, 'x' );
+		var multiplicator = _multiplicator;
+		var range = _range;
+
+		this.populate = function() {
+			var multiplicand;
+
+			for ( var i = 0; i < this.size; i++ ) {
+				multiplicand = this.getRandomNumber( range.max );
+				problem = { 'type': 'multiplication', 'operator': this.symbol, 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
+				this.aSet.push( problem );
+				console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
+			}
+
+			return this.aSet;
+		};
+	}
+	MultiplicationProblemSet.inherits( ProblemSet );
+
+	function Question( _id, _text, _answer ) {
+		this.id = _id;
+		this.text = _text;
+		this.answer = _answer || -1;
+
+		this.getAnswer = function() {
+			return this.answer;
+		};
+
+		this.getText = function() {
+			return this.text;
+		};
+
+		this.getId = function() {
+			return this.id;
+		};
+
+		return this;
+	}
+
+	function TestQuestion( _id, _text, _answer, _userAnswer ) { // extends Question.
+		Question.call( this, _id, _text, _answer );
+		this.userAnswer = _userAnswer || -1;
+
+		this.getUserAnswer = function() {
+			return this.userAnswer;
+		};
+
+		this.setUserAnswer = function( _answer ) {
+			this.userAnswer = _answer;
+			return this;
+		};
+
+		return this;
+	}
+	TestQuestion.inherits(Question);
+
+	function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
+		var type = _type || 'unknown';
+		var numberOfQuestions = _numberOfQuestions;
+		var questions = [];
+		var multiplicator = _multiplicator || 1;
+		var timeLimit = _timeLimit || 10; // in seconds
+		var range = _range;
+		var timer;
+		var currentQuestion = 0;
+		var ui;
+		var completed = false;
+		var status = Test.INITIALIZED;
+		var that = this;
+
+		EventTarget.call( this );
+
+		function init() {
+			build();
 		}
 
-		// calculate answer
-		if ( _form && currentQuestion <= numberOfQuestions ) {
-			questions[currentQuestion-1].userAnswer = _form.answerField.value;
-			console.log( _form.answerField.value );
-			_form.answerField.value = '';
+		function build() {
+			var problemSet;
 
-		}
-
-		if (++currentQuestion > numberOfQuestions) {
-			this.grade();
-		}
-		else {
-			var textNode;
-
+			// Multiplication Test:
 			if ( type == 'multiplication' ) {
-				textNode = ( currentQuestion + "> " + 
-						questions[currentQuestion-1].multiplicator + " x " + 
-						questions[currentQuestion-1].multiplicand + " = ");
+				problemSet = new MultiplicationProblemSet( numberOfQuestions, range, multiplicator );
+				questions = problemSet.populate();
 			}
 			else if ( type == 'division' ) {
-				textNode = (currentQuestion + "> " + 
-						questions[currentQuestion-1].dividend + " / " + 
-						questions[currentQuestion-1].divisor + " = ");
-			}
-			else if ( type == 'addition' ) {
-				textNode = (currentQuestion + "> " + 
-						questions[currentQuestion-1].augend + " + " + 
-						questions[currentQuestion-1].addend + " = ");
+				problemSet = new DivisionProblemSet( numberOfQuestions, range, multiplicator );
+				questions = problemSet.populate();
 			}
 			else if ( type == 'subtraction' ) {
-				textNode = (currentQuestion + "> " + 
-						questions[currentQuestion-1].minuend + " - " + 
-						questions[currentQuestion-1].subtrahend + " = ");
+				problemSet = new SubtractionProblemSet( numberOfQuestions, range );
+				questions = problemSet.populate();
+			}
+			else if ( type == 'addition' ) {
+				problemSet = new AdditionProblemSet( numberOfQuestions, range );
+				questions = problemSet.populate();
+			}
+			else {
+				console.log( 'exiting b/c type is not supported: ' + type );
+				return;
+			}
+		}
+
+		this.close = function() {};
+
+		this.grade = function( _close ) {
+			var oModel_, numberOfQuestionsCorrect = 0, questionsAnswered = 0;
+			// Tally User Score
+			for ( var i = 0; i < questions.length; i++ ) {
+				if ( questions[i].answer == questions[i].userAnswer ) {
+					++numberOfQuestionsCorrect;
+				}
+
+				if ( questions[i].userAnswer ) {
+					++questionsAnswered;
+				}
+			}
+			return {
+				'name': 'name',
+				'type': type,
+				'operation': function(chunk, context, bodies) {
+					if ( type === 'multiplication' || type === 'division' ) {
+						chunk.render( bodies.block, context );
+					}
+				},
+				'multiplicator': multiplicator,
+				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
+				'questionsAnswered': questionsAnswered,
+				'questionsCorrect': numberOfQuestionsCorrect,
+				'timeSpent': '0' //timer.getElapsedTime()
+			};
+		};
+
+		this.start = function() {
+			status = Test.START;
+			this.fire( Test.START );
+			return this.next();
+		};
+
+		this.answer = function( _answer, _qIdx ) {
+			var qIdx = _qIdx || currentQuestion;
+			var answer =  _answer || null;
+			questions[qIdx].userAnswer = _answer;
+		};
+
+		this.next = function() {
+			if ( status == Test.COMPLETE ) { return null; }
+			if ( ++currentQuestion >= numberOfQuestions ) {
+				this.complete();
+				return null;
+			}
+			// Build the Model
+			var oQModel = {}, factor1, factor2;
+			switch ( type ) {
+				case 'multiplication':
+					factor1 = questions[currentQuestion].multiplicator;
+					factor2 = questions[currentQuestion].multiplicand;
+					break;
+				case 'division':
+					factor1 = questions[currentQuestion].dividend;
+					factor2 = questions[currentQuestion].divisor;
+					break;
+				case 'addition':
+					factor1 = questions[currentQuestion].augend;
+					factor2 = questions[currentQuestion].addend;
+					break;
+				case 'subtraction':
+					factor1 = questions[currentQuestion].minuend;
+					factor2 = questions[currentQuestion].subtrahend;
+					break;
+				default:
+					break;
 			}
 
-			// ui = document.getElementById( "question-display-canvas" );
-			// rplElement = document.getElementById( "content-area-span" );
+			return {
+				'readableQuestionIdx': currentQuestion + 1,
+				'questionIdx': currentQuestion,
+				'factor1': factor1,
+				'factor2': factor2,
+				'operator': questions[currentQuestion].operator
+			};
+		};
 
-			// var containerElement = document.createElement("span");
-			// containerElement.setAttribute( "id", "content-area-span" );
+		this.status = function() {
+			return status;
+		};
 
-			// var formElement = document.createElement( 'form' );
-			// formElement.setAttribute('id', 'htmlFormAnswerPanel');
-			// formElement.setAttribute('onSubmit', 'oMM.next( this ); return false;');
-			// var inputElement = document.createElement('input');
-			// inputElement.setAttribute('type', 'text');
-			// inputElement.setAttribute('id', 'answerField');
-			// inputElement.setAttribute('name', 'answer');
-			// inputElement.setAttribute( 'autocomplete', 'off' );
-			// inputElement.setAttribute( 'title', 'Enter a numeric answer.' );
-			// inputElement.setAttribute( 'pattern', '[0-9]{1,3}' );
-			
-			// formElement.appendChild(inputElement);
-			// containerElement.appendChild(textNode);
-			// containerElement.appendChild(formElement);
-			// modal.open({content:containerElement});
-			// document.getElementById( 'answerField' ).focus();
-			dust.render( 'demo', { text: textNode }, function( err, out ) {
-  				modal.open( { content: out } );
+		this.complete = function() {
+			if ( status != Test.COMPLETE ) {
+				status = Test.COMPLETE;
+				this.fire( Test.COMPLETE );
+			}
+		};
+
+		init();
+		return this;
+	}
+	Test.prototype = new EventTarget();
+	Test.prototype.constructor = Test;
+	Object.defineProperty (  Test, 'COMPLETE', {
+			get: function() { return 'complete'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+	Object.defineProperty (  Test, 'INITIALIZED', {
+			get: function() { return 'iniitialized'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+	Object.defineProperty (  Test, 'START', {
+			get: function() { return 'start'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+
+	function Timer( _length, _onEndFunc ) {
+		var length = _length;
+		var maximumTime = _length;
+		var active = false;
+		var handle;
+		var ui;
+		var onEndFunc = _onEndFunc;
+		var ownerFunc = this;
+		var remainingTime = length;
+		var timerCalibrationFIXED = 60;
+		var adjustmentFactor = getConversionFactor();
+		var increment = getConversionFactor() * 1000;
+
+		function getConversionFactor() {
+			return (length / timerCalibrationFIXED);
+		}
+
+		this.start = function() {
+			if ( isActive() === false ) {
+				setActive(true);
+				ui = document.getElementById("timer-display-canvas");
+				this.execute();
+			}
+		};
+
+		this.execute = function() {
+			var rightValue;
+
+			remainingTime = (remainingTime - adjustmentFactor);
+			scaledValue = (remainingTime * timerCalibrationFIXED) / length;
+			//console.log( 'in execute of timer... Timer Length: ' + length + " :: remainingTime: " + remainingTime + ' adjustment (rightValue):: ' + scaledValue + ' ::increment::' + increment) ;
+			rightValue = ( scaledValue * 6 ) + "px";
+			ui.style.clip = "rect(0px," + rightValue + ", 40px, 0px)";
+			if (remainingTime > 0) {
+				handle = setTimeout( ownerFunc.execute.bind( ownerFunc ), increment );
+			}
+			else {
+				this.stop();
+			}
+		};
+
+		this.getElapsedTime = function() {
+			return length - remainingTime;
+		};
+
+		this.stop = function() {
+			clearTimeout(handle);
+			setActive(false);
+			if (onEndFunc) { onEndFunc(); }
+		};
+
+		this.kill = function() {
+			clearTimeout(handle);
+			setActive(false);
+		};
+
+		function setActive(_boolean) {
+			active = _boolean;
+		}
+
+		function isActive() {
+			return active;
+		}
+	}
+
+	function MMCDashboardView() {
+		var oHTMLRefLevelInfoText = document.getElementById( 'mmLevelInfoText' ),
+			oHTMLRefInfoPanelAddendum = document.getElementById( 'mmInfoPanelAddendum' ),
+			oHTMLRefLevelInfoPanel = document.getElementById( 'mmLevelInfoPanel' );
+
+		this.render = function( _levelConfig, _userParamsRef ) {
+			oHTMLRefLevelInfoText.innerHTML =  _levelConfig.text;
+			// Check for additional display panels ( 'selectors' )
+			if ( _levelConfig.selector !== null ) {
+				renderAddendum( _levelConfig.selector );
+				_userParamsRef.addendum = -1;
+				oHTMLRefInfoPanelAddendum.style.display = 'block';
+			}
+			else {
+				_userParamsRef.addendum = null;
+				if ( oHTMLRefInfoPanelAddendum !== null ) {
+					oHTMLRefInfoPanelAddendum.style.display = 'none';
+				}
+			}
+			// Show the info panel
+			oHTMLRefLevelInfoPanel.style.display = 'inline-block';
+		};
+		// Handled with DUST.js
+		function renderAddendum( _data ) {
+			if ( _data.type == 'select' ) {
+				dust.render( 'demo3', _data,
+					function( _err, _out ) {
+						if ( _err ) {
+							throw new Error( 1, 'Cannot show Addendum Select List ' + JSON.stringify( _err ) );
+						}
+						// Show info Panel
+						if ( oHTMLRefInfoPanelAddendum ) {
+							oHTMLRefInfoPanelAddendum.innerHTML = _out;
+						}
+					}
+				); // close dust render
+			}
+
+			return this;
+		}
+	}
+
+	function MMCQuestionView() {
+		this.render = function( _oModel ) {
+			dust.render( 'QuestionView', _oModel, function( _err, _out ) {
+				if ( _err ) {
+					console.log( 'error in question model' );
+					return;
+				}
+				modal.open( { content: _out } );
 			});
-
+			// Put focus on answerField - Has issue with Mobile Browsers onLoad fire focus event.
 			document.getElementById( 'answerField' ).focus();
-		}
-	};
-
-	function setComplete(_boolean) {
-		completed = _boolean;
+		};
+		return this;
 	}
 
-	function isComplete() {
-		return completed;
+	function MMCResultView() {
+		this.render = function( _oModel ) {
+			dust.render( 'ResultView', _oModel, function( _err, _out ) {
+					modal.open( { content: _out } );
+				}
+			);
+		};
 	}
-
-	init();
-}
-Test.prototype = new EventTarget();
-Test.prototype.constructor = Test;
-
-function Timer( _length, _onEndFunc ) {
-	var length = _length;
-	var maximumTime = _length;
-	var active = false;
-	var handle;
-	var ui;
-	var onEndFunc = _onEndFunc;
-	var ownerFunc = this;
-	var remainingTime = length;
-	var timerCalibrationFIXED = 60;
-	var adjustmentFactor = getConversionFactor();
-	var increment = getConversionFactor() * 1000;
-
-	function getConversionFactor() {
-		return (length / timerCalibrationFIXED);
-	}
-
-	this.start = function() {
-		if ( isActive() === false ) { 
-			setActive(true);
-			ui = document.getElementById("timer-display-canvas");
-			this.execute();
-		}
-	};
-
-	this.execute = function() {
-		var rightValue;
-
-		remainingTime = (remainingTime - adjustmentFactor);
-		scaledValue = (remainingTime * timerCalibrationFIXED) / length;
-		console.log( 'in execute of timer... Timer Length: ' + length + " :: remainingTime: " + remainingTime + ' adjustment (rightValue):: ' + scaledValue + ' ::increment::' + increment) ;
-		//remainingTime = (remainingTime/adjustmentFactor) - 1;
-		rightValue = ( scaledValue * 6 ) + "px";
-		ui.style.clip = "rect(0px," + rightValue + ", 40px, 0px)";
-		if (remainingTime > 0) {
-			handle = setTimeout( ownerFunc.execute.bind( ownerFunc ), increment );	
-		}
-		else {
-			this.stop();
-		}
-	};
-
-	this.getElapsedTime = function() {
-		return length - remainingTime;
-	}
-
-	this.stop = function() {
-		clearTimeout(handle);
-		setActive(false);
-		if (onEndFunc) { onEndFunc(); }
-	};
-
-	this.kill = function() {
-		clearTimeout(handle);
-		setActive(false);
-	};
-
-	function setActive(_boolean) {
-		active = _boolean; 
-	}
-
-	function isActive() {
-		return active;
-	}
-}
-
-function ProblemSet( _size, _symbol ) {
-	this.size = _size || 0;
-	this.symbol = _symbol || '###';
-	this.aSet = [];
-
-	this.getArraySet = function() {
-		return this.aSet;
-	};
-
-	this.getSymbol = function() {
-		return this.symbol;
-	};
-
-	this.setSize = function( _size ) {
-		this.size = _size;
-	};
-
-	this.getRandomNumber = function( _limit ) {
-		return Math.floor( ( Math.random() * _limit) + 1 );
-	};
-
-	this.getRandomQuestion = function() {
-		return this.aSet[ this.getRandomNumber( this.size ) ];
-	};
-
-	return this;
-}
-
-function AdditionProblemSet( _size, _range ) {
-	ProblemSet.call( this, _size, '+' );
-	var range = _range;
-
-	this.populate = function() {
-		var augend, addend;
-
-		for ( var i = 0; i < this.size; i++ ) {
-			augend = this.getRandomNumber( range.max );
-			addend = this.getRandomNumber( range.max );
-			problem = { 'augend': augend,'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
-			this.aSet.push( problem );
-			console.log( 'this.populate():::' + problem );
-		}
-
-		return this.aSet;
-	};
-
-	return this;
-}
-AdditionProblemSet.inherits( ProblemSet );
-
-function SubtractionProblemSet( _size, _range ) {
-	ProblemSet.call( this, _size, '-' );
-	var range = _range;
-
-	this.populate = function() {
-		var minuend, subtrahend;
-		for ( var i = 0; i < this.size; i++ ) {
-			minuend = this.getRandomNumber( range.max );
-			subtrahend = this.getRandomNumber( minuend );
-			problem = { 'minuend': minuend,'subtrahend': subtrahend, 'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
-			this.aSet.push( problem );
-		}
-
-		return this.aSet;
-	};
-
-	return this;
-}
-SubtractionProblemSet.inherits( ProblemSet );
-
-function DivisionProblemSet( _size, _range, _divisor ) {
-	ProblemSet.call( this, _size, '/' );
-	var divisor = _divisor;
-	var range = _range;
-
-	this.populate = function() {
-		var dividend;
-
-		for ( var i = 0; i < this.size; i++ ) {
-			dividend = this.getRandomNumber( range.max );
-			problem = {'type': 'division', 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
-			this.aSet.push( problem );
-			console.log( 'aSet Length: ' + JSON.stringify( this.aSet[i] ) );
-		}
-
-		return this.aSet;
-	};
-
-	return this;
-}
-DivisionProblemSet.inherits( ProblemSet );
-
-function MultiplicationProblemSet( _size, _range, _multiplicator ) {
-	ProblemSet.call( this, _size, 'x' );
-	var multiplicator = _multiplicator;
-	var range = _range;
-
-	this.populate = function() {
-		var multiplicand;
-
-		for ( var i = 0; i < this.size; i++ ) {
-			multiplicand = this.getRandomNumber( range.max );
-			problem = { 'type': 'multiplication', 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
-			this.aSet.push( problem );
-			console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
-		}
-
-		return this.aSet;
-	};
-}
-MultiplicationProblemSet.inherits( ProblemSet );
 
 	function MMChallengerController() {
 		var modalRef,
 			configPath = '/math-challenger/config/config.json',
 			appConfig,
-			test;
-		var userParams = {
-			level: -1,
-			operation: null,
-			addendum: null,
-			testConfig: null
-		};
+			oMMTest,
+			oTimer,
+			oDashboardView = new MMCDashboardView(),
+			oMMCQuestionView = new MMCQuestionView(),
+			oMMCResultView = new MMCResultView();
 
-		init();
+		var userParams = {
+				level: -1,
+				operation: null,
+				addendum: null,
+				testConfig: null
+			};
 
 		function init() {
 			fetchAppConfig();
@@ -465,89 +504,72 @@ MultiplicationProblemSet.inherits( ProblemSet );
 			}
 			// Render Components
 			// Show Instructions
-			document.getElementById( 'mmLevelInfoText' ).innerHTML = appConfigLevelRef.text;
-			// Check for additional display panels ( 'selectors' )
-			if ( appConfigLevelRef.selector != null ) {
-				render( appConfigLevelRef.selector  );
-				userParams.addendum = -1;
-			}
-			else {
-				userParams.addendum = null;
-				if ( document.getElementById( 'mmInfoPanelAddendum' ) != null ) {
-					document.getElementById( 'mmInfoPanelAddendum' ).style.display = 'none';
-				}
-			}
-			document.getElementById( 'mmLevelInfoPanel' ).style.display = 'inline-block';
-		}
-		// Should be replaced with DUST.js
-		function render( _data ) {
-			var optionValue,
-				optionText,
-				textNode,
-				selectNodeRef, 
-				optionNodeRef, 
-				pNodeRef = document.createElement( 'p' );
-				pNodeRef.setAttribute( 'id', 'mmInfoPanelAddendum' );
-			// var documentTextNode = document.createTextNode( _data.text )
-			if ( _data.type == 'select' ) {
-				selectNodeRef = document.createElement( 'select' );
-				selectNodeRef.setAttribute( 'id', 'mmIDAddendumSelect' );
-				selectNodeRef.setAttribute( 'class', 'mm-block-style' );
-				selectNodeRef.setAttribute( 'onChange', 'oMM.handleInfoPanelAddendumSelect( this )' );
-
-				for ( var i = 0; i < _data.value.length; i++ ) {
-					optionValue = ( i == 0 )? "null" : _data.value[i];
-					optionText = ( i == 0 )? _data.text : _data.value[i];
-					optionNodeRef = document.createElement( 'option' );
-					optionNodeRef.setAttribute( 'value', optionValue );
-					textNode = document.createTextNode( optionText );
-					optionNodeRef.appendChild( textNode );
-					selectNodeRef.appendChild( optionNodeRef );
-				}
-				if ( selectNodeRef !== null ) {
-					pNodeRef.appendChild( selectNodeRef );
-
-					var pNodeDOMRef = document.getElementById( 'mmInfoPanelAddendum' );
-					if ( pNodeDOMRef ) {
-						pNodeDOMRef.parentNode.replaceChild( pNodeRef, pNodeDOMRef );
-					}
-					else {
-						var tempRefNode = document.getElementById( 'mmLevelInfoText' );
-						document.getElementById( 'mmLevelInfoPanel' ).insertBefore( pNodeRef,  tempRefNode.nextSibling );
-					}
-				}
-			}
+			oDashboardView.render( appConfigLevelRef, userParams );
 		}
 
 		this.start = function( _oForm ) {
-			var playerName = _oForm.mmPlayerHandle.value;
+			var oModel;
+			var playerName = ( _oForm.mmPlayerHandle.value == 'Enter Nick Name' )? 'DefaultUser' : _oForm.mmPlayerHandle.value;
+			// Configure User Param
 			if ( userParams.addendum == -1 ) {
 				console.log( "Set a value for the addendum" );
-				return;
+				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
 			}
-			test = new Test( userParams.operation, userParams.addendum, userParams.testConfig.questions, userParams.testConfig.time, userParams.testConfig.range );
-			test.addListener( 'start', function() { console.log( 'Test Started!!!' ); } );
-			//test.addEventListener( 'complete', function() { console.log( 'completed' ); });
-			test.start();
-
-			// listen for when the test is completed get it's status and then act accordingly.
+			// Start Create Test Object and start.
+			oMMTest = new Test( userParams.operation,
+							userParams.addendum,
+							userParams.testConfig.questions,
+							userParams.testConfig.time,
+							userParams.testConfig.range
+						);
+			oMMTest.addListener( 'start', function() { console.log( 'Test Started!!!' ); } );
+			oMMTest.addListener( 'complete', this.grade.bind( this ) );
+			// configure timer
+			oTimer = new Timer( userParams.testConfig.time, this.end.bind( this ) );
+			// Start Test
+			oModel = oMMTest.start();
+			if ( oModel  !== null ) {
+				// Show Question
+				oMMCQuestionView.render( oModel );
+				// Start Timer
+				oTimer.start();
+			}
 		};
 
-		this.complete = function() {}
-
 		this.next = function( _formRef ) {
-			test.next( _formRef );
+			var oModel;
+			if ( !_formRef || ( _formRef.answerField.value === null || _formRef.answerField.value === '' ) ) {
+				return false;
+				// throw new Error(3, 'No form input received.  Enter an answer.' );
+			}
+			// Evaluate the answer. Expect the oMMTest to know the currentQuestion.
+			oMMTest.answer( _formRef.answerField.value );
+			oModel = oMMTest.next();
+			if ( oModel !== null ) {
+				// Show next Question;
+				oMMCQuestionView.render( oModel );
+			}
 		};
 
 		this.end = function() {
-			test.grade();
+			oMMTest.complete();
 		};
+
+		this.grade = function() {
+			oModel = oMMTest.grade();
+			if ( oModel  !== null ) {
+				// Show Result Screen
+				oMMCResultView.render( oModel );
+			}
+		};
+
 		this.reset = function() {
-			test.close();
+			oTimer.kill();
+			oMMTest.complete();
 		};
 
 		this.handleLevelSelect = function( _oFormSelect ) {
-			if ( !_oFormSelect ) { 
+			if ( !_oFormSelect ) {
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
@@ -558,7 +580,7 @@ MultiplicationProblemSet.inherits( ProblemSet );
 		};
 
 		this.handleOperationSelect = function( _oFormSelect ) {
-			if ( !_oFormSelect ) { 
+			if ( !_oFormSelect ) {
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
@@ -569,13 +591,16 @@ MultiplicationProblemSet.inherits( ProblemSet );
 		};
 
 		this.handleInfoPanelAddendumSelect = function ( _oFormSelect ) {
-			if ( !_oFormSelect ) { 
+			if ( !_oFormSelect ) {
 				console.log( "Error: no handle to the Select List Form passed in");
 				return;
 			} //
-			userParams.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value ) : null;
+			userParams.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
 			console.log( userParams.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
 		};
+
+		init();
+		return this;
 	}
 	window['oMM'] = new MMChallengerController();
 })();
