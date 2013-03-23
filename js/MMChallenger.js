@@ -221,11 +221,6 @@
 			return examConfig;
 		};
 
-		this.update = function( _addendum ) {
-			setFactor( _addendum );
-			build();
-		};
-
 		this.setFactor = function( _factor ) {
 			if ( type == 'multiplication' || type == 'division' ) {
 				if ( level > 0 ) {
@@ -235,6 +230,10 @@
 					factor = _factor;
 				}
 			}
+		};
+
+		this.getTime = function() {
+			return examConfig.time;
 		};
 
 		this.build = function() {
@@ -352,11 +351,6 @@
 				'questionsAnswered': questionsAnswered,
 				'questionsCorrect': numberOfQuestionsCorrect
 			};
-		};
-
-		this.getExamConfig = function() {
-			console.log( "Exam.getExamConfig(): " + examConfig );
-			return examConfig;
 		};
 	}
 
@@ -724,7 +718,7 @@
 			// Reset Answer Array. Would be better to add the 'userAnswer' to the 'Test' object just reseting it when 'new Test()' is called.
 			__Answers = [];
 			// configure timer
-			oTimer = new Timer( 10, this.end.bind( this ) );
+			oTimer = new Timer( this.Exam.getTime(), this.end.bind( this ) );
 			// Start Create Test Object and start.
 			this.Exam.build();
 			this.Exam.addListener( 'start', function() {
@@ -772,35 +766,6 @@
 		this.getTimeSpent = function() {
 			return Math.floor( oTimer.getElapsedTime() );
 		};
-
-		this.grade = function() {
-			var oModel_,
-				numberOfQuestionsCorrect = 0,
-				questionsAnswered = 0,
-				type = this.Exam.getType(),
-				__ExamQuestionsRef = this.Exam.getQuestions();
-
-			// Tally User Score
-			for ( var i = 0, numberOfQuestions = __ExamQuestionsRef.length; i < numberOfQuestions; i++ ) {
-				if ( __ExamQuestionsRef[i].answer == __Answers[i] ) { ++numberOfQuestionsCorrect; }
-				if ( __Answers[i] ) { ++questionsAnswered; }
-			}
-
-			return {
-				'name': name,
-				'type': oExam.getType(),
-				'operation': function(chunk, context, bodies) {
-					if ( type === 'multiplication' || type === 'division' ) {
-						chunk.render( bodies.block, context );
-					}
-				},
-				'multiplicator': this.parameters.addendum,
-				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
-				'questionsAnswered': questionsAnswered,
-				'questionsCorrect': numberOfQuestionsCorrect,
-				'timeSpent': Math.floor( oTimer.getElapsedTime() )
-			};
-		};
 	}
 
 	function MMChallengerController() {
@@ -819,7 +784,6 @@
 		function init() {
 			__Users.push( new User( new Date().getTime(), that ) );
 			currentUserIdx = __Users.length - 1;
-			// fetchAppConfig();
 			Exam.fetchAppConfig( configPath );
 		}
 
@@ -844,8 +808,8 @@
 			// Initialize Exam and associate it with a USER
 			__Users[currentUserIdx].Exam = new Exam( __Users[currentUserIdx].parameters.operation, __Users[currentUserIdx].parameters.level );
 			// Render Components // Show Instructions
-			console.log( "Exam Config: "  + __Users[currentUserIdx].Exam.getExamConfig() );
-			oDashboardView.render( __Users[currentUserIdx].Exam.getExamConfig(), __Users[currentUserIdx].parameters );
+			console.log( "Exam Config: "  + __Users[currentUserIdx].Exam.getConfig() );
+			oDashboardView.render( __Users[currentUserIdx].Exam.getConfig(), __Users[currentUserIdx].parameters );
 		}
 
 		this.callback = function( _action, _object ) {
@@ -864,11 +828,9 @@
 				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
 			}
 
-			// __Users[currentUserIdx].Exam.build();
 			oModel = __Users[currentUserIdx].start();
 			if ( oModel  !== null ) {
-				// Show Question
-				oMMCQuestionView.render( oModel );
+				oMMCQuestionView.render( oModel ); // Show Question
 			}
 		};
 
@@ -877,13 +839,10 @@
 			if ( !_formRef || ( _formRef.answerField.value === null || _formRef.answerField.value === '' ) ) {
 				return false;
 			}
-			// Evaluate the answer. Expect the oMMTest to know the currentQuestion.
 			__Users[currentUserIdx].answer( _formRef.answerField.value );
-			// Show next question
-			oModel = __Users[currentUserIdx].next();
+			oModel = __Users[currentUserIdx].next(); // Show next question
 			if ( oModel !== null ) {
-				// Show next Question;
-				oMMCQuestionView.render( oModel );
+				oMMCQuestionView.render( oModel ); // Show next Question;
 			}
 		};
 
@@ -894,8 +853,7 @@
 		this.grade = function() {
 			oModel = __Users[currentUserIdx].grade();
 			if ( oModel  !== null ) {
-				// Show Result Screen
-				oMMCResultView.render( oModel );
+				oMMCResultView.render( oModel ); // Show Result Screen
 			}
 		};
 
@@ -908,7 +866,8 @@
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
-			__Users[currentUserIdx].parameters.level = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : -1;
+			__Users[currentUserIdx].parameters.level = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )?
+					_oFormSelect.options[_oFormSelect.selectedIndex].value : -1;
 			if (__Users[currentUserIdx].parameters.operation !== null) {
 				setEnvironment();
 			}
@@ -919,7 +878,8 @@
 				console.log( "Error: no handle to the LevelSelect Form passed in");
 				return;
 			} //
-			__Users[currentUserIdx].parameters.operation = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? _oFormSelect.options[_oFormSelect.selectedIndex].value : null;
+			__Users[currentUserIdx].parameters.operation = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )?
+					_oFormSelect.options[_oFormSelect.selectedIndex].value : null;
 			if ( __Users[currentUserIdx].parameters.level != -1 ) {
 				setEnvironment();
 			}
@@ -930,9 +890,9 @@
 				console.log( "Error: no handle to the Select List Form passed in");
 				return;
 			} //
-			__Users[currentUserIdx].parameters.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
+			__Users[currentUserIdx].parameters.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )?
+					parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
 			__Users[currentUserIdx].Exam.setFactor( __Users[currentUserIdx].parameters.addendum );
-			// console.log( __Users[currentUserIdx].parameters.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
 		};
 
 		this.handleTestCompletedFromUser = function( _user ) {
