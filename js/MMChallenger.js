@@ -215,7 +215,7 @@
 				__Questions = problemSet.populate();
 			}
 			else if ( type == 'division' ) {
-				if ( level > 0 ) { factor = examConfig.factor; }
+				if ( level > 0 ) { factor = examConfig.factors; }
 				problemSet = new DivisionProblemSet( examConfig.questions, examConfig.range, factor );
 				__Questions = problemSet.populate();
 			}
