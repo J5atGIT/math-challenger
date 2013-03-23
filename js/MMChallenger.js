@@ -37,7 +37,8 @@
 			for ( var i = 0; i < this.size; i++ ) {
 				augend = this.getRandomNumber( range.max );
 				addend = this.getRandomNumber( range.max );
-				problem = { 'type': 'additon', 'operator': this.symbol, 'augend': augend, 'addend': addend, 'sum': (augend + addend), 'answer': (augend + addend) };
+				problem = { 'type': 'additon', 'operator': this.symbol, 'augend': augend, 'addend': addend,
+						'sum': (augend + addend), 'answer': (augend + addend) };
 				this.aSet.push( problem );
 			}
 			return this.aSet;
@@ -56,7 +57,8 @@
 			for ( var i = 0; i < this.size; i++ ) {
 				minuend = this.getRandomNumber( range.max );
 				subtrahend = this.getRandomNumber( minuend );
-				problem = { 'type': 'subtraction', 'operator': this.symbol, 'minuend': minuend, 'subtrahend': subtrahend, 'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
+				problem = { 'type': 'subtraction', 'operator': this.symbol, 'minuend': minuend, 'subtrahend': subtrahend,
+						'difference': ( minuend - subtrahend ), 'answer': ( minuend - subtrahend ) };
 				this.aSet.push( problem );
 			}
 
@@ -69,17 +71,20 @@
 
 	function DivisionProblemSet( _size, _range, _divisor ) {
 		ProblemSet.call( this, _size, '/' );
-		var divisor = _divisor;
+		var __Divisors = ( Array.isArray( _divisor ) === true)? _divisor : [ _divisor ];
 		var range = _range;
 
 		this.populate = function() {
-			var dividend;
+			var dividend, divisor, boolRandomDivisor;
 
+			boolRandomDivisor = ( __Divisors.length > 1)? true : false;
 			for ( var i = 0; i < this.size; i++ ) {
 				dividend = this.getRandomNumber( range.max );
-				problem = {'type': 'division', 'operator': this.symbol, 'dividend': dividend,'divisor': divisor, 'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
+				divisor = ( boolRandomDivisor )?
+						__Divisors[this.getRandomNumber( __Divisors.length - 1 )] : __Divisors[0];
+				problem = {'type': 'division', 'operator': this.symbol, 'dividend': dividend,'divisor': divisor,
+						'quotient': (dividend/divisor), 'answer': (dividend/divisor) };
 				this.aSet.push( problem );
-				console.log( 'aSet Length: ' + JSON.stringify( this.aSet[i] ) );
 			}
 
 			return this.aSet;
@@ -98,57 +103,21 @@
 			var multiplicand, multiplicator, boolRandomMultiplicator;
 
 			boolRandomMultiplicator = ( __Multiplicator.length > 1)? true : false;
-
 			for ( var i = 0; i < this.size; i++ ) {
 				multiplicand = this.getRandomNumber( range.max );
-				multiplicator = ( boolRandomMultiplicator )? __Multiplicator[this.getRandomNumber( __Multiplicator.length -1 )] : __Multiplicator[0];
-				console.log( "multiplicator:: " + multiplicator );
-				problem = { 'type': 'multiplication', 'operator': this.symbol, 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
+				multiplicator = ( boolRandomMultiplicator )?
+						__Multiplicator[this.getRandomNumber( __Multiplicator.length -1 )] : __Multiplicator[0];
+				problem = { 'type': 'multiplication', 'operator': this.symbol, 'multiplicand': multiplicand,'multiplicator': multiplicator,
+						'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
 				this.aSet.push( problem );
-				console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
 			}
 
 			return this.aSet;
 		};
+
+		return this;
 	}
 	MultiplicationProblemSet.inherits( ProblemSet );
-
-	function Question( _id, _text, _answer ) {
-		this.id = _id;
-		this.text = _text;
-		this.answer = _answer || -1;
-
-		this.getAnswer = function() {
-			return this.answer;
-		};
-
-		this.getText = function() {
-			return this.text;
-		};
-
-		this.getId = function() {
-			return this.id;
-		};
-
-		return this;
-	}
-
-	function TestQuestion( _id, _text, _answer, _userAnswer ) { // extends Question.
-		Question.call( this, _id, _text, _answer );
-		this.userAnswer = _userAnswer || -1;
-
-		this.getUserAnswer = function() {
-			return this.userAnswer;
-		};
-
-		this.setUserAnswer = function( _answer ) {
-			this.userAnswer = _answer;
-			return this;
-		};
-
-		return this;
-	}
-	TestQuestion.inherits(Question);
 
 	function Exam( _type, _level ) {
 		EventTarget.call( this );
@@ -353,7 +322,6 @@
 			};
 		};
 	}
-
 	Exam.prototype = new EventTarget();
 	Exam.prototype.constructor = Exam;
 	Object.defineProperty( Exam, 'COMPLETE', {
@@ -392,178 +360,6 @@
 		oXMLHttpRequest.onload = _callback;
 		oXMLHttpRequest.send();
 	}
-
-	function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
-		var type = _type || 'unknown';
-		var numberOfQuestions = _numberOfQuestions;
-		var questions = [];
-		var multiplicator = _multiplicator || 1;
-		var timeLimit = _timeLimit || 10; // in seconds
-		var range = _range;
-		var timer;
-		var currentQuestion = 0;
-		var ui;
-		var completed = false;
-		var status = Test.INITIALIZED;
-		var that = this;
-
-		EventTarget.call( this );
-
-		function init() {
-			build();
-		}
-
-		function build() {
-			var problemSet;
-
-			// Multiplication Test:
-			if ( type == 'multiplication' ) {
-				problemSet = new MultiplicationProblemSet( numberOfQuestions, range, multiplicator );
-				questions = problemSet.populate();
-			}
-			else if ( type == 'division' ) {
-				problemSet = new DivisionProblemSet( numberOfQuestions, range, multiplicator );
-				questions = problemSet.populate();
-			}
-			else if ( type == 'subtraction' ) {
-				problemSet = new SubtractionProblemSet( numberOfQuestions, range );
-				questions = problemSet.populate();
-			}
-			else if ( type == 'addition' ) {
-				problemSet = new AdditionProblemSet( numberOfQuestions, range );
-				questions = problemSet.populate();
-			}
-			else {
-				console.log( 'exiting b/c type is not supported: ' + type );
-				return;
-			}
-		}
-
-		this.getType = function() {
-			return type;
-		};
-
-		this.getQuestions = function() {
-			return questions;
-		};
-
-		this.close = function() {};
-
-		this.grade = function( _close ) {
-			var oModel_, numberOfQuestionsCorrect = 0, questionsAnswered = 0;
-			// Tally User Score
-			for ( var i = 0; i < questions.length; i++ ) {
-				if ( questions[i].answer == questions[i].userAnswer ) {
-					++numberOfQuestionsCorrect;
-				}
-
-				if ( questions[i].userAnswer ) {
-					++questionsAnswered;
-				}
-			}
-			return {
-				'name': 'name',
-				'type': type,
-				'operation': function(chunk, context, bodies) {
-					if ( type === 'multiplication' || type === 'division' ) {
-						chunk.render( bodies.block, context );
-					}
-				},
-				'multiplicator': multiplicator,
-				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
-				'questionsAnswered': questionsAnswered,
-				'questionsCorrect': numberOfQuestionsCorrect,
-				'timeSpent': '0' //timer.getElapsedTime()
-			};
-		};
-
-		this.start = function( _qIdx ) {
-			status = Test.START;
-			this.fire( Test.START );
-			return this.next( _qIdx );
-		};
-
-		this.answer = function( _answer, _qIdx ) {
-			var qIdx = _qIdx || currentQuestion;
-			var answer =  _answer || null;
-			questions[qIdx].userAnswer = _answer;
-		};
-
-		this.next = function( _qIdx ) {
-			if ( status == Test.COMPLETE ) { return null; }
-			if ( _qIdx >= numberOfQuestions ) {
-				this.complete();
-				return null;
-			}
-			// Build the Model
-			var oQModel = {}, factor1, factor2;
-			switch ( type ) {
-				case 'multiplication':
-					factor1 = questions[_qIdx].multiplicator;
-					factor2 = questions[_qIdx].multiplicand;
-					break;
-				case 'division':
-					factor1 = questions[_qIdx].dividend;
-					factor2 = questions[_qIdx].divisor;
-					break;
-				case 'addition':
-					factor1 = questions[_qIdx].augend;
-					factor2 = questions[_qIdx].addend;
-					break;
-				case 'subtraction':
-					factor1 = questions[_qIdx].minuend;
-					factor2 = questions[_qIdx].subtrahend;
-					break;
-				default:
-					break;
-			}
-
-			return {
-				'readableQuestionIdx': _qIdx + 1,
-				'questionIdx': _qIdx,
-				'factor1': factor1,
-				'factor2': factor2,
-				'operator': questions[_qIdx].operator
-			};
-		};
-
-		this.status = function() {
-			return status;
-		};
-
-		this.complete = function() {
-			if ( status != Test.COMPLETE ) {
-				status = Test.COMPLETE;
-				this.fire( Test.COMPLETE );
-			}
-		};
-
-		init();
-		return this;
-	}
-	Test.prototype = new EventTarget();
-	Test.prototype.constructor = Test;
-	Object.defineProperty( Test, 'COMPLETE', {
-			get: function() { return 'complete'; },
-			writeable: false,
-			enumerable: false,
-			configurable: false
-		}
-	);
-	Object.defineProperty( Test, 'INITIALIZED', {
-			get: function() { return 'iniitialized'; },
-			writeable: false,
-			enumerable: false,
-			configurable: false
-		}
-	);
-	Object.defineProperty( Test, 'START', {
-			get: function() { return 'start'; },
-			writeable: false,
-			enumerable: false,
-			configurable: false
-		}
-	);
 
 	function Timer( _length, _onEndFunc ) {
 		var length = _length;
@@ -730,6 +526,7 @@
 		};
 
 		this.callController = function() {
+			oTimer.kill();
 			oControllerRef.callback( 'TEST_COMPLETE', this );
 		};
 

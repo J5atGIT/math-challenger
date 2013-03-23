@@ -57,7 +57,7 @@
 						"min": 0,
 						"max": 15
 					},
-					"factors": [0,1,2,3,4,5,6,10,11],
+					"factors": [1,2,3,4,5,6,10,11],
 					"selectedFactor": 0,
 					"range": {
 						"min": 0,
@@ -80,7 +80,7 @@
 						"min": 0,
 						"max": 15
 					},
-					"factors": [0,1,2,3,4,5,6,10,11],
+					"factors": [1,2,3,4,5,6,10,11],
 					"selectedFactor": 0,
 					"random": true,
 					"questions": 50,
@@ -93,7 +93,7 @@
 						"min": 0,
 						"max": 15
 					},
-					"factors": [0,1,2,3,4,5,6,10,11],
+					"factors": [1,2,3,4,5,6,10,11],
 					"selectedFactor": 0,
 					"questions": 100,
 					"selector": null
