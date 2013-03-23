@@ -91,14 +91,18 @@
 
 	function MultiplicationProblemSet( _size, _range, _multiplicator ) {
 		ProblemSet.call( this, _size, 'x' );
-		var multiplicator = _multiplicator;
+		var __Multiplicator = ( Array.isArray( _multiplicator ) === true)? _multiplicator : [ _multiplicator ];
 		var range = _range;
 
 		this.populate = function() {
-			var multiplicand;
+			var multiplicand, multiplicator, boolRandomMultiplicator;
+
+			boolRandomMultiplicator = ( __Multiplicator.length > 1)? true : false;
 
 			for ( var i = 0; i < this.size; i++ ) {
 				multiplicand = this.getRandomNumber( range.max );
+				multiplicator = ( boolRandomMultiplicator )? __Multiplicator[this.getRandomNumber( __Multiplicator.length -1 )] : __Multiplicator[0];
+				console.log( "multiplicator:: " + multiplicator );
 				problem = { 'type': 'multiplication', 'operator': this.symbol, 'multiplicand': multiplicand,'multiplicator': multiplicator, 'product': (multiplicator*multiplicand), 'answer': (multiplicator*multiplicand) };
 				this.aSet.push( problem );
 				console.log( 'aSet: ' + JSON.stringify( this.aSet[i] ) + ' :Length: ' + this.aSet.length );
@@ -145,6 +149,255 @@
 		return this;
 	}
 	TestQuestion.inherits(Question);
+
+	function Exam( _type, _level ) {
+		EventTarget.call( this );
+
+		var configPath = '/math-challenger/config/config.json',
+			type = _type,
+			level = _level,
+			that = this,
+			status,
+			factor,
+			examConfig,
+			__Questions = [];
+
+		init();
+
+		function init() {
+			if ( Exam.CONFIG === null ) {
+				try {
+					Exam.fetchAppConfig( configPath, false ); // async should block.
+				}
+				catch(e) {
+					console.log( 'Error loading Exam configuration:::' + e.message );
+					return;
+				}
+			}
+			// Establish reference to appropriate point in JSON.
+			try {
+				configure();
+			}
+			catch(e) {
+				console.log( e.message );
+				return;
+			}
+			// Build Exam
+			// build();
+		}
+
+		function configure() {
+			// Match UserParam settings to appConfig settings.
+			var examConfigOperationsRef, examConfigLevelRef;
+			// Get Operations Handle
+			for ( var key in Exam.CONFIG.operations ) {
+				if ( key == type ) {
+					examConfigOperationsRef = Exam.CONFIG.operations[key];
+					break;
+				}
+			}
+
+			if ( examConfigOperationsRef === null ) {
+				throw new Error( "returning... Operation not found in appConfig." );
+			}
+
+			// Get Level Handle
+			for ( var key2 in examConfigOperationsRef.levels ) {
+				if ( key2 == level ) {
+					examConfigLevelRef = examConfigOperationsRef.levels[key2];
+					examConfig = examConfigLevelRef;
+					break;
+				}
+			}
+
+			if ( examConfig === null ) {
+				console.log( "ExamConfig is NULL " );
+				throw new Error( 'RETURNING... Level not found in appConfig' );
+			}
+			// Need to set a status
+		}
+
+		this.getConfig = function() {
+			return examConfig;
+		};
+
+		this.update = function( _addendum ) {
+			setFactor( _addendum );
+			build();
+		};
+
+		this.setFactor = function( _factor ) {
+			if ( type == 'multiplication' || type == 'division' ) {
+				if ( level > 0 ) {
+					factor = examConfig.factors;
+				}
+				else {
+					factor = _factor;
+				}
+			}
+		};
+
+		this.build = function() {
+			var problemSet;
+
+			// Multiplication Test:
+			if ( type == 'multiplication' ) {
+				if ( level > 0 ) { factor = examConfig.factors; }
+				problemSet = new MultiplicationProblemSet( examConfig.questions, examConfig.range, factor );
+				__Questions = problemSet.populate();
+			}
+			else if ( type == 'division' ) {
+				if ( level > 0 ) { factor = examConfig.factor; }
+				problemSet = new DivisionProblemSet( examConfig.questions, examConfig.range, factor );
+				__Questions = problemSet.populate();
+			}
+			else if ( type == 'subtraction' ) {
+				problemSet = new SubtractionProblemSet( examConfig.questions, examConfig.range );
+				__Questions = problemSet.populate();
+			}
+			else if ( type == 'addition' ) {
+				problemSet = new AdditionProblemSet( examConfig.questions, examConfig.range );
+				__Questions = problemSet.populate();
+			}
+			else {
+				console.log( 'exiting b/c type is not supported: ' + type );
+				return;
+			}
+		};
+
+		this.start = function( _qIdx ) {
+			status = Exam.START;
+			this.fire( Exam.START );
+			return this.next( _qIdx );
+		};
+
+		this.answer = function( _answer, _qIdx ) {
+			var qIdx = _qIdx || currentQuestion;
+			var answer =  _answer || null;
+			__Questions[qIdx].userAnswer = _answer;
+		};
+
+		this.next = function( _qIdx ) {
+			if ( status == Exam.COMPLETE ) { return null; }
+			if ( _qIdx >= examConfig.questions ) {
+				this.complete();
+				return null;
+			}
+			// Build the Model
+			var oQModel = {}, factor1, factor2;
+			switch ( type ) {
+				case 'multiplication':
+					factor1 = __Questions[_qIdx].multiplicator;
+					factor2 = __Questions[_qIdx].multiplicand;
+					break;
+				case 'division':
+					factor1 = __Questions[_qIdx].dividend;
+					factor2 = __Questions[_qIdx].divisor;
+					break;
+				case 'addition':
+					factor1 = __Questions[_qIdx].augend;
+					factor2 = __Questions[_qIdx].addend;
+					break;
+				case 'subtraction':
+					factor1 = __Questions[_qIdx].minuend;
+					factor2 = __Questions[_qIdx].subtrahend;
+					break;
+				default:
+					break;
+			}
+
+			return {
+				'readableQuestionIdx': _qIdx + 1,
+				'questionIdx': _qIdx,
+				'factor1': factor1,
+				'factor2': factor2,
+				'operator': __Questions[_qIdx].operator
+			};
+		};
+
+		this.status = function() {
+			return status;
+		};
+
+		this.complete = function() {
+			if ( status != Exam.COMPLETE ) {
+				status = Exam.COMPLETE;
+				this.fire( Exam.COMPLETE );
+			}
+		};
+
+		this.grade = function( __Answers ) {
+			var oModel_,
+				numberOfQuestionsCorrect = 0,
+				questionsAnswered = 0;
+				// type = this.Exam.getType(),
+				// __ExamQuestionsRef = this.Exam.getQuestions();
+
+			// Tally User Score
+			for ( var i = 0, numberOfQuestions = __Questions.length; i < numberOfQuestions; i++ ) {
+				if ( __Questions[i].answer == __Answers[i] ) { ++numberOfQuestionsCorrect; }
+				if ( __Answers[i] ) { ++questionsAnswered; }
+			}
+
+			return {
+				'name': name,
+				'type': type,
+				'operation': function(chunk, context, bodies) {
+					if ( type === 'multiplication' || type === 'division' ) {
+						chunk.render( bodies.block, context );
+					}
+				},
+				'multiplicator': factor,
+				'questionsPercent': Math.floor( numberOfQuestionsCorrect/numberOfQuestions * 100 ) + '%',
+				'questionsAnswered': questionsAnswered,
+				'questionsCorrect': numberOfQuestionsCorrect
+			};
+		};
+
+		this.getExamConfig = function() {
+			console.log( "Exam.getExamConfig(): " + examConfig );
+			return examConfig;
+		};
+	}
+
+	Exam.prototype = new EventTarget();
+	Exam.prototype.constructor = Exam;
+	Object.defineProperty( Exam, 'COMPLETE', {
+			get: function() { return 'complete'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+	Object.defineProperty( Exam, 'INITIALIZED', {
+			get: function() { return 'iniitialized'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+	Object.defineProperty( Exam, 'START', {
+			get: function() { return 'start'; },
+			writeable: false,
+			enumerable: false,
+			configurable: false
+		}
+	);
+
+	Exam.fetchAppConfig = function( _path, _async ) {
+		var async = _async || true;
+
+		new XHR( _path,  function() {
+				Exam.CONFIG = JSON.parse( this.responseText );
+			}, async);
+	};
+
+	function XHR( _path, _callback, _async ) {
+		var oXMLHttpRequest = new XMLHttpRequest();
+		oXMLHttpRequest.open( 'GET', _path, true ); // asynchronous = false;
+		oXMLHttpRequest.onload = _callback;
+		oXMLHttpRequest.send();
+	}
 
 	function Test( _type, _multiplicator, _numberOfQuestions, _timeLimit, _range ) {
 		var type = _type || 'unknown';
@@ -450,13 +703,15 @@
 	}
 
 	function User( _id, _oControllerRef ) {
-		var id = new Date().getTime(),
+		var id = new Date().getTime(), // not using '_id' as yet
 			name,
 			oExam,
 			__Answers = [],
 			currentQuestionIdx = -1,
 			oTimer,
 			oControllerRef = _oControllerRef;
+
+		this.Exam = null;
 
 		this.parameters = {
 			level: -1,
@@ -466,27 +721,18 @@
 		};
 
 		this.start = function() {
-			// Configure User Param
-			if ( this.parameters.addendum == -1 ) {
-				console.log( "Set a value for the addendum" );
-				return;
-				//throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
-			}
 			// Reset Answer Array. Would be better to add the 'userAnswer' to the 'Test' object just reseting it when 'new Test()' is called.
 			__Answers = [];
 			// configure timer
 			oTimer = new Timer( 10, this.end.bind( this ) );
 			// Start Create Test Object and start.
-			oExam = new Test( this.parameters.operation, this.parameters.addendum, this.parameters.testConfig.questions,
-							this.parameters.testConfig.time, this.parameters.testConfig.range );
-			oExam.addListener( 'start', function() {
-					// Start Timer
-					oTimer.start();
+			this.Exam.build();
+			this.Exam.addListener( 'start', function() {
+					oTimer.start(); // Start Timer
 					console.log( 'Test Started!!!' );
 				} );
-			oExam.addListener( 'complete', this.callController.bind( this ) );
-			// Start Test
-			return oExam.start( ++currentQuestionIdx );
+			this.Exam.addListener( 'complete', this.callController.bind( this ) );
+			return this.Exam.start( ++currentQuestionIdx ); // Start Test
 		};
 
 		this.callController = function() {
@@ -497,29 +743,42 @@
 			name = _name;
 		};
 
+		this.getName = function() {
+			return name;
+		};
+
+		this.getAnswers = function() {
+			return __Answers;
+		};
+
 		this.answer = function( _answer ) {
 			__Answers[currentQuestionIdx] = _answer;
 		};
 
 		this.next = function() {
-			return oExam.next( ++currentQuestionIdx );
+			return this.Exam.next( ++currentQuestionIdx );
 		};
 
 		this.end = function() {
-			oExam.complete();
+			this.Exam.complete();
 		};
 
 		this.reset = function() {
 			oTimer.kill();
-			oExam.complete();
+			this.Exam.complete();
 			currentQuestionIdx = -1;
+		};
+
+		this.getTimeSpent = function() {
+			return Math.floor( oTimer.getElapsedTime() );
 		};
 
 		this.grade = function() {
 			var oModel_,
 				numberOfQuestionsCorrect = 0,
 				questionsAnswered = 0,
-				__ExamQuestionsRef = oExam.getQuestions();
+				type = this.Exam.getType(),
+				__ExamQuestionsRef = this.Exam.getQuestions();
 
 			// Tally User Score
 			for ( var i = 0, numberOfQuestions = __ExamQuestionsRef.length; i < numberOfQuestions; i++ ) {
@@ -527,7 +786,6 @@
 				if ( __Answers[i] ) { ++questionsAnswered; }
 			}
 
-			var type = oExam.getType();
 			return {
 				'name': name,
 				'type': oExam.getType(),
@@ -561,7 +819,8 @@
 		function init() {
 			__Users.push( new User( new Date().getTime(), that ) );
 			currentUserIdx = __Users.length - 1;
-			fetchAppConfig();
+			// fetchAppConfig();
+			Exam.fetchAppConfig( configPath );
 		}
 
 		function fetchAppConfig() {
@@ -582,31 +841,11 @@
 				console.log( "returning... Select and operation and a level" );
 				return;
 			}
-
-			// Match UserParam settings to appConfig settings.
-			var appConfigOperationsRef, appConfigLevelRef;
-			// Get Operations Handle
-			for ( var key in appConfig.operations ) {
-				if ( key == __Users[currentUserIdx].parameters.operation ) {
-					appConfigOperationsRef = appConfig.operations[key];
-					break;
-				}
-			}
-			if ( appConfigOperationsRef === null ) {
-				console.log ( "returning... Operation not found in appConfig." );
-				return;
-			}
-			// Get Level Handle
-			for ( var key2 in appConfigOperationsRef.levels ) {
-				if ( key2 === __Users[currentUserIdx].parameters.level ) {
-					appConfigLevelRef = appConfigOperationsRef.levels[key2];
-					__Users[currentUserIdx].parameters.testConfig = appConfigLevelRef;
-					break;
-				}
-			}
-			// Render Components
-			// Show Instructions
-			oDashboardView.render( appConfigLevelRef, __Users[currentUserIdx].parameters );
+			// Initialize Exam and associate it with a USER
+			__Users[currentUserIdx].Exam = new Exam( __Users[currentUserIdx].parameters.operation, __Users[currentUserIdx].parameters.level );
+			// Render Components // Show Instructions
+			console.log( "Exam Config: "  + __Users[currentUserIdx].Exam.getExamConfig() );
+			oDashboardView.render( __Users[currentUserIdx].Exam.getExamConfig(), __Users[currentUserIdx].parameters );
 		}
 
 		this.callback = function( _action, _object ) {
@@ -617,8 +856,15 @@
 
 		this.start = function( _oForm ) {
 			var oModel;
-			var playerName = ( _oForm.mmPlayerHandle.value == 'Enter Nick Name' )? 'DefaultUser' : _oForm.mmPlayerHandle.value;
+			var playerName = ( _oForm.mmPlayerHandle.value == 'Enter Nick Name' )? 'Default User' : _oForm.mmPlayerHandle.value;
 			__Users[currentUserIdx].setName( playerName );
+			// Configure User Param
+			if ( __Users[currentUserIdx].parameters.addendum == -1 ) {
+				console.log( "Set a value for the addendum" );
+				throw new Error( 2, "No Choices made in the addendum layer.  Choose a refinement parameter." );
+			}
+
+			// __Users[currentUserIdx].Exam.build();
 			oModel = __Users[currentUserIdx].start();
 			if ( oModel  !== null ) {
 				// Show Question
@@ -685,14 +931,16 @@
 				return;
 			} //
 			__Users[currentUserIdx].parameters.addendum = ( _oFormSelect.options[_oFormSelect.selectedIndex].value != "null" )? parseInt( _oFormSelect.options[_oFormSelect.selectedIndex].value, 10 ) : null;
-			console.log( __Users[currentUserIdx].parameters.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
+			__Users[currentUserIdx].Exam.setFactor( __Users[currentUserIdx].parameters.addendum );
+			// console.log( __Users[currentUserIdx].parameters.addendum + " : " +  _oFormSelect.options[_oFormSelect.selectedIndex].value );
 		};
 
 		this.handleTestCompletedFromUser = function( _user ) {
-			var oResultsModel = _user.grade();
+			var oResultsModel = _user.Exam.grade( _user.getAnswers() );
 			if ( oResultsModel !== null ) {
-				// Show Result Screen
-				oMMCResultView.render( oResultsModel );
+				oResultsModel.timeSpent = _user.getTimeSpent();
+				oResultsModel.name = _user.getName();
+				oMMCResultView.render( oResultsModel ); // Show Result Screen
 			}
 		};
 
